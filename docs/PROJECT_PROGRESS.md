@@ -13,6 +13,8 @@ Monitored application flow:
 User → NexOps Store (frontend) → orders-api → payment-api
 ```
 
+Docker Compose (Stage 2) runs the same flow as three containers on one Docker network.
+
 Later platform flow (not started yet):
 
 ```
@@ -25,7 +27,7 @@ Failure → Monitoring → Incident Detector → AI Analyzer
 |------|--------|
 | Frontend | React + TypeScript (Vite) |
 | Backend | Python + FastAPI |
-| Containers | Docker |
+| Containers | Docker + Docker Compose |
 | Future | Kubernetes, Prometheus, Grafana, Loki, Terraform, AWS EKS, GitHub Actions, LLM API |
 
 ## Build stages
@@ -33,7 +35,7 @@ Failure → Monitoring → Incident Detector → AI Analyzer
 | Stage | Name | Status |
 |-------|------|--------|
 | 1 | Applications (frontend, orders-api, payment-api) | COMPLETED |
-| 2 | Local Docker | NOT STARTED |
+| 2 | Local Docker | COMPLETED |
 | 3 | Local Kubernetes | NOT STARTED |
 | 4 | Failure Simulation | NOT STARTED |
 | 5 | Monitoring | NOT STARTED |
@@ -50,15 +52,15 @@ Failure → Monitoring → Incident Detector → AI Analyzer
 | 16 | Reverse Engineering | NOT STARTED |
 
 ## Current stage
-**Stage 1 — Applications (COMPLETED)**  
-Next: Stage 2 — Local Docker (not started)
+**Stage 2 — Local Docker (COMPLETED)**  
+Next: Stage 3 — Local Kubernetes (not started)
 
 ## Important decisions
 - GitHub repository `nexops-ai-kubernetes-platform` is the permanent source of truth.
-- Stage 1 services stay simple: no database, no Redis/Kafka.
-- POC Docker builds may need an environment-specific proxy; that proxy is **not** part of NexOps production architecture and is not hardcoded into application code.
-- Existing `payment-api` was reviewed and extended (typed `/pay` payload, tests, non-root Dockerfile) instead of rewritten.
-- Frontend talks to `orders-api`; `orders-api` calls `payment-api` via `PAYMENT_API_URL`.
+- Stage 1/2 services stay simple: no database, no Redis/Kafka.
+- Existing Stage 1 Dockerfiles were kept; Stage 2 added `docker-compose.yml` and `.dockerignore` files only.
+- Frontend nginx proxies `/api` to `orders-api`; `orders-api` reaches `payment-api` via Docker DNS (`PAYMENT_API_URL=http://payment-api:8000`).
+- POC/corporate proxy remains environment-specific and is not hardcoded into Compose or application code.
 
 ## Known issues
 - Local Windows workstation does not have Git installed; Git commit/push is done from the POC environment which already has authenticated GitHub credentials.

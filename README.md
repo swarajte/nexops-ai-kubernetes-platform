@@ -3,9 +3,9 @@
 **NexOps — AI Kubernetes Incident Response & Self-Healing Platform**
 
 ## Current status
-Stage 1 — Applications completed.
+Stage 2 — Local Docker completed.
 
-## Stage 1 applications
+## Application flow
 ```
 NexOps Store (frontend)
         ↓
@@ -14,13 +14,27 @@ NexOps Store (frontend)
     payment-api
 ```
 
-| Service | Path | Port |
-|---------|------|------|
-| frontend | `frontend/` | 5173 (dev) / 80 (container) |
+| Service | Path | Host port |
+|---------|------|-----------|
+| frontend | `frontend/` | 3000 |
 | orders-api | `orders-api/` | 8001 |
 | payment-api | `payment-api/` | 8000 |
 
-## Local run (without Docker Compose)
+## Run with Docker Compose (recommended)
+```bash
+docker compose up --build -d
+```
+
+Open http://localhost:3000 and click **Buy now**.
+
+Useful commands:
+```bash
+docker compose ps
+docker compose logs -f
+docker compose down
+```
+
+## Local run without Docker
 ```bash
 # terminal 1
 cd payment-api
@@ -39,7 +53,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173 and place an order.
+Open http://localhost:5173
 
 ## Tests
 ```bash
