@@ -1,0 +1,166 @@
+                         INTERNET
+                            │
+                            ▼
+                    ┌───────────────┐
+                    │   FRONTEND    │
+                    │  Our Store    │
+                    └───────┬───────┘
+                            │
+                            ▼
+                     ┌─────────────┐
+                     │ orders-api  │
+                     └──────┬──────┘
+                            │
+                            ▼
+                     ┌─────────────┐
+                     │ payment-api │
+                     └──────┬──────┘
+                            │
+                       💥 something
+                          breaks
+                            │
+                            ▼
+                  ┌─────────────────────┐
+                  │    MONITORING       │
+                  │ Prometheus / Logs   │
+                  └──────────┬──────────┘
+                             │
+                             ▼
+                  ┌─────────────────────┐
+                  │ INCIDENT DETECTOR   │
+                  └──────────┬──────────┘
+                             │
+                             ▼
+                  ┌─────────────────────┐
+                  │    AI ANALYZER      │
+                  │                     │
+                  │ "What happened?"    │
+                  └──────────┬──────────┘
+                             │
+                             ▼
+                  ┌─────────────────────┐
+                  │    DASHBOARD        │
+                  │                     │
+                  │ Problem             │
+                  │ Evidence            │
+                  │ Suggested fix       │
+                  └──────────┬──────────┘
+                             │
+                          APPROVE
+                             │
+                             ▼
+                  ┌─────────────────────┐
+                  │   REMEDIATION       │
+                  └──────────┬──────────┘
+                             │
+                             ▼
+                       KUBERNETES
+                             │
+                             ▼
+                       Check health
+                             │
+                      ┌──────┴──────┐
+                      ▼             ▼
+                    Fixed        Still broken
+                      │
+                      ▼
+                      ✅
+					  
+					  
+
+
+The store is:
+
+frontend
+
+Our platform dashboard is:
+
+dashboard
+
+It might look something like:
+
+┌──────────────────────────────────────┐
+│ AI Kubernetes Operations             │
+├──────────────────────────────────────┤
+│                                      │
+│ Applications                         │
+│                                      │
+│ frontend       🟢                    │
+│ orders-api     🟢                    │
+│ payment-api    🔴 INCIDENT           │
+│                                      │
+├──────────────────────────────────────┤
+│ Active Incident                      │
+│                                      │
+│ payment-api                          │
+│ OOMKilled                            │
+│                                      │
+│ AI Analysis:                         │
+│ Container exceeded memory limit.     │
+│                                      │
+│ Recommended Fix:                    │
+│ Increase memory 256Mi → 512Mi        │
+│                                      │
+│ [ Approve Fix ]   [ Reject ]         │
+└──────────────────────────────────────┘
+
+
+
+We'll answer a very practical question:
+
+When payment-api crashes, how does the information travel from Kubernetes → Incident Detector → AI → Dashboard → Remediation?
+
+
+Final Core Architecture :
+
+                    ┌───────────────┐
+                    │ Applications  │
+                    │               │
+                    │ frontend      │
+                    │ orders-api    │
+                    │ payment-api   │
+                    └───────┬───────┘
+                            │
+                            ▼
+                       Kubernetes
+                            │
+              ┌─────────────┼─────────────┐
+              │             │             │
+              ▼             ▼             ▼
+         Kubernetes     Prometheus       Loki
+             API          Metrics         Logs
+              │             │             │
+              └─────────────┼─────────────┘
+                            ▼
+                    Incident Detector
+                            │
+                            ▼
+                       AI Analyzer
+                            │
+                            ▼
+                        Dashboard
+                            │
+                         APPROVE
+                            │
+                            ▼
+                       Remediation
+                            │
+                            ▼
+                       Kubernetes
+                            │
+                            ▼
+                         Verify
+						 
+						 
+						 
+This is where I want us to be disciplined.
+
+Don't tell Cursor:
+
+"Build the entire AI Kubernetes platform."
+
+Instead we'll give Cursor small tasks.
+
+For example:
+
+Create a simple FastAPI payment service with /health and /pay endpoints. Keep the code minimal and easy for a beginner to understand.

@@ -1,0 +1,43 @@
+NEXOPS GITHUB SETUP
+
+We are building:
+
+NexOps — AI Kubernetes Incident Response & Self-Healing Platform
+
+Create/use this GitHub repository:
+
+nexops-ai-kubernetes-platform
+
+Before pushing anything:
+
+1. Check that no secrets exist in the repository.
+
+2. Ensure .gitignore exists.
+
+3. Never commit:
+- passwords
+- API keys
+- GitHub tokens
+- AWS credentials
+- kubeconfig
+- .env files containing secrets
+- corporate credentials
+- corporate information
+
+4. Initialize Git if required.
+
+5. Use main as the default branch.
+
+6. Create the initial commit with a clear message.
+
+7. Push the project to the GitHub repository.
+
+8. Do not use GitHub credentials directly inside source code or configuration files.
+
+9. Use the already authenticated GitHub/Cursor/gh environment where available.
+
+10. Do not add GitHub Actions yet unless explicitly requested.
+
+Initial repository should contain the project instruction files and the currently implemented application code.
+
+Do not create future application/platform components just for the sake of filling the repository.

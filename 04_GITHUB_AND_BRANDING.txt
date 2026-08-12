@@ -1,0 +1,126 @@
+NEXOPS BRANDING AND GITHUB
+
+PROJECT NAME
+
+NexOps
+
+FULL PROJECT NAME
+
+NexOps — AI Kubernetes Incident Response & Self-Healing Platform
+
+
+GITHUB REPOSITORY
+
+nexops-ai-kubernetes-platform
+
+
+APPLICATION
+
+Name:
+NexOps Store
+
+Purpose:
+A small online store used as the application monitored by the NexOps platform.
+
+The store should look polished and modern.
+
+It should contain:
+- landing/store page
+- products
+- order flow
+- payment flow
+- application status where useful
+
+It should look like a real small product rather than a tutorial page.
+
+
+OPS DASHBOARD
+
+Name:
+NexOps Control Center
+
+Purpose:
+Operations dashboard for monitoring and managing Kubernetes incidents.
+
+It should show:
+- application health
+- active incidents
+- incident severity
+- incident timeline
+- logs/evidence
+- AI analysis
+- recommended fix
+- confidence
+- approval/rejection
+- remediation progress
+- recovery status
+
+The dashboard should look like a modern DevOps/SRE product.
+
+Use a clean dark/light professional interface.
+
+Prefer:
+- clean cards
+- useful charts
+- clear status indicators
+- good spacing
+- readable typography
+- responsive design
+- polished navigation
+
+Avoid:
+- giant gradients everywhere
+- excessive animations
+- generic AI chatbot styling
+- plain tutorial-style HTML
+
+
+POSSIBLE URL STRUCTURE
+
+Application:
+
+/store
+
+Operations:
+
+/ops
+
+For final AWS deployment these can later become separate routes/subdomains if useful.
+
+
+GITHUB
+
+Use:
+- main branch
+- meaningful commit messages
+- .gitignore
+- README.md
+- GitHub Actions
+
+Never commit:
+- passwords
+- tokens
+- API keys
+- kubeconfig
+- AWS credentials
+- .env files containing secrets
+- corporate information
+
+
+README SHOULD EVENTUALLY CONTAIN
+
+- project overview
+- architecture diagram
+- features
+- technology stack
+- local setup
+- Kubernetes setup
+- AWS setup
+- incident examples
+- AI flow
+- remediation flow
+- security
+- screenshots
+- demo instructions
+- troubleshooting
+- lessons learned

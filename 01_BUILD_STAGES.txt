@@ -1,0 +1,325 @@
+NEXOPS BUILD STAGES
+
+STAGE 1 — Applications
+
+Build:
+- frontend
+- orders-api
+- payment-api
+
+Requirements:
+- simple
+- working
+- Dockerized
+- easy to understand
+
+NexOps Store should be visually attractive.
+
+Do not add unnecessary databases or complicated business logic initially.
+
+
+STAGE 2 — Local Docker
+
+Run all applications using Docker.
+
+Verify:
+
+frontend
+  ↓
+orders-api
+  ↓
+payment-api
+
+Test:
+- health endpoints
+- order flow
+- payment flow
+
+
+STAGE 3 — Local Kubernetes
+
+Deploy the applications to Kubernetes.
+
+Create:
+- Deployments
+- Services
+- ConfigMaps where needed
+- Secrets only where actually needed
+- health checks
+
+Verify the complete application flow.
+
+
+STAGE 4 — Failure Simulation
+
+Add controlled ways to create failures.
+
+First:
+- OOMKilled
+
+Then:
+- CrashLoopBackOff
+- ImagePullBackOff
+- readiness failure
+- high CPU
+- high memory
+- slow application
+- high error rate
+
+The failures should be intentional and safe to run in our demo environment.
+
+
+STAGE 5 — Monitoring
+
+Add:
+- Prometheus
+- Grafana
+- Loki
+
+Collect:
+- CPU
+- memory
+- pod restarts
+- application errors
+- request information
+- Kubernetes events
+- application logs
+
+Create useful dashboards.
+
+
+STAGE 6 — Incident Detector
+
+Build a Python service that watches Kubernetes and monitoring information.
+
+Its job:
+
+Something looks wrong
+    ↓
+Create an incident
+
+It should store useful incident information.
+
+Example:
+
+Incident:
+payment-api
+
+Problem:
+OOMKilled
+
+Status:
+OPEN
+
+
+STAGE 7 — AI Analyzer
+
+Build a separate Python service.
+
+Input:
+- incident information
+- Kubernetes information
+- metrics
+- logs
+- events
+- relevant application information
+
+Output should be structured.
+
+Example:
+
+Problem:
+payment-api is running out of memory.
+
+Evidence:
+- OOMKilled
+- memory usage near limit
+- repeated restarts
+
+Likely cause:
+memory limit is too low.
+
+Suggested fix:
+increase memory from 256Mi to 512Mi.
+
+Confidence:
+91%
+
+
+STAGE 8 — NexOps Control Center
+
+Build a good-looking operations dashboard.
+
+Show:
+- overall application health
+- incidents
+- incident details
+- logs/evidence
+- AI analysis
+- suggested fix
+- confidence
+- approval/rejection
+- remediation progress
+- final recovery status
+
+The UI should look like a real DevOps/SRE product.
+
+Avoid a basic plain HTML dashboard.
+
+
+STAGE 9 — Remediation
+
+Build a separate remediation service.
+
+Flow:
+
+AI recommendation
+    ↓
+Safety validation
+    ↓
+User approval
+    ↓
+Apply allowed Kubernetes change
+    ↓
+Verify application health
+
+Never allow the AI to execute arbitrary shell commands.
+
+Use an allowlist of supported actions.
+
+Examples:
+- increase replicas
+- increase memory
+- restart a deployment
+
+Dangerous operations must not be automatically executed.
+
+
+STAGE 10 — Kubernetes Security
+
+Add:
+- ServiceAccounts
+- Roles
+- RoleBindings
+- least required permissions
+
+The remediation service should only have the permissions it needs.
+
+The AI Analyzer should not have unrestricted Kubernetes access.
+
+
+STAGE 11 — CI/CD
+
+Use GitHub Actions.
+
+Pipeline should eventually include:
+
+Git push
+  ↓
+Tests
+  ↓
+Code quality checks
+  ↓
+Security scan
+  ↓
+Docker build
+  ↓
+Container scan
+  ↓
+Push image to ECR
+  ↓
+Deploy
+
+
+STAGE 12 — Infrastructure
+
+Use Terraform.
+
+Create AWS infrastructure required by the final project.
+
+Eventually:
+
+AWS
+├── VPC
+├── subnets
+├── security groups
+├── EKS
+├── ECR
+├── IAM
+└── required supporting resources
+
+
+STAGE 13 — AWS / EKS
+
+Move the working system from local Kubernetes to AWS EKS.
+
+The final system should run independently of the corporate network.
+
+
+STAGE 14 — Production Improvements
+
+Add where useful:
+- better error handling
+- retries
+- timeouts
+- health checks
+- security
+- resource limits
+- structured logs
+- monitoring
+- alerts
+- backup/recovery considerations
+- cost awareness
+
+
+STAGE 15 — Final Demo
+
+Create a simple demo flow:
+
+1. Open NexOps Store.
+2. Show the application working.
+3. Trigger an OOMKilled incident.
+4. Open NexOps Control Center.
+5. Show the detected incident.
+6. Show AI analysis.
+7. Show evidence.
+8. Show recommended fix.
+9. Approve the fix.
+10. Show Kubernetes applying the change.
+11. Show application recovering.
+12. Show incident becoming RESOLVED.
+
+
+STAGE 16 — Reverse Engineering
+
+After the project works, stop adding features temporarily.
+
+Understand everything:
+
+- Python
+- FastAPI
+- Docker
+- Kubernetes
+- Helm
+- Prometheus
+- Grafana
+- Loki
+- Kubernetes API
+- RBAC
+- Terraform
+- AWS
+- EKS
+- ECR
+- GitHub Actions
+- AI integration
+- remediation
+- security
+- networking
+
+For every component understand:
+WHAT it does
+WHY we need it
+HOW it works
+WHAT can fail
+HOW to troubleshoot it
+WHY we selected it instead of alternatives

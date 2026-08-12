@@ -1,0 +1,103 @@
+NEXOPS
+AI Kubernetes Incident Response & Self-Healing Platform
+
+PROJECT GOAL
+
+Build a production-style DevOps project that monitors applications running on Kubernetes, detects problems, uses AI to understand the problem, suggests a fix, allows human approval, applies the fix, and verifies whether the application recovered.
+
+The project should demonstrate real DevOps skills together with practical AI usage.
+
+IMPORTANT
+
+This is not a generic AI chatbot.
+
+AI must have a real job:
+- understand Kubernetes incidents
+- analyze logs, metrics and Kubernetes information
+- identify the likely cause
+- suggest a safe fix
+- explain why the fix is recommended
+
+The platform must NOT blindly allow AI to execute arbitrary commands.
+
+PRODUCTS
+
+1. NexOps Store
+
+This is the application being monitored.
+
+It should be a good-looking small online store.
+
+Flow:
+
+User
+  ↓
+NexOps Store
+  ↓
+orders-api
+  ↓
+payment-api
+
+2. NexOps Control Center
+
+This is our DevOps operations dashboard.
+
+It should show:
+- application health
+- active incidents
+- incident details
+- AI analysis
+- evidence
+- recommended fix
+- approval/rejection
+- remediation status
+- recovery status
+
+MAIN INCIDENT FLOW
+
+Application breaks
+    ↓
+Kubernetes detects the failure
+    ↓
+Monitoring collects information
+    ↓
+Incident Detector creates an incident
+    ↓
+AI Analyzer investigates
+    ↓
+AI gives diagnosis + evidence + recommendation
+    ↓
+Control Center shows the result
+    ↓
+User approves or rejects
+    ↓
+Remediation service applies approved fix
+    ↓
+System checks whether the application recovered
+    ↓
+Incident becomes RESOLVED or remains OPEN
+
+FIRST INCIDENT
+
+Start with OOMKilled.
+
+Later add:
+- CrashLoopBackOff
+- ImagePullBackOff
+- readiness probe failure
+- high CPU
+- high memory
+- high error rate
+- application dependency failure
+
+IMPORTANT DEVELOPMENT RULE
+
+Build one working piece at a time.
+
+Do not build the entire platform at once.
+
+Do not add technologies just because they sound impressive.
+
+Keep code understandable.
+
+The final goal is that the developer can reverse engineer and explain every important part of the project.

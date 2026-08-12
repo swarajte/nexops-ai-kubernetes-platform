@@ -1,0 +1,111 @@
+NEXOPS TECHNOLOGY STACK
+
+APPLICATIONS
+
+Frontend:
+- React
+- TypeScript
+- modern CSS/UI library if useful
+
+Backend:
+- Python
+- FastAPI
+
+Container:
+- Docker
+
+
+KUBERNETES
+
+- Kubernetes
+- kubectl
+- Helm
+
+Local development:
+- existing local/POC Kubernetes environment
+
+Final deployment:
+- AWS EKS
+
+
+AWS
+
+- VPC
+- EC2 only where required
+- EKS
+- ECR
+- IAM
+- Load Balancer
+- CloudWatch where useful
+- Secrets Manager where useful
+
+
+INFRASTRUCTURE
+
+- Terraform
+
+
+CI/CD
+
+- GitHub Actions
+
+
+MONITORING
+
+- Prometheus
+- Grafana
+
+
+LOGGING
+
+- Loki
+
+
+SECURITY
+
+- Kubernetes RBAC
+- ServiceAccounts
+- Roles
+- RoleBindings
+- Trivy
+- container security
+- least privilege
+
+
+AI
+
+Use an LLM API.
+
+The exact provider/model can be selected during implementation.
+
+AI is responsible for:
+- incident analysis
+- root cause explanation
+- evidence interpretation
+- fix recommendation
+
+AI must return structured output.
+
+AI must NOT receive unrestricted shell access.
+
+AI must NOT directly execute arbitrary kubectl commands.
+
+
+DATA
+
+Avoid a database initially.
+
+Add PostgreSQL or another database only when the project actually needs persistent application/platform data.
+
+Do not introduce Redis/Kafka/etc. without a clear reason.
+
+
+IMPORTANT
+
+Do not add technologies just to make the technology list larger.
+
+Prefer:
+simple
+reliable
+understandable
+production-style

@@ -1,0 +1,120 @@
+You are helping build a project called:
+
+NexOps
+
+Full name:
+
+NexOps — AI Kubernetes Incident Response & Self-Healing Platform
+
+Read and understand these project files before making implementation decisions:
+
+- 00_PROJECT_BRIEF.txt
+- 01_BUILD_STAGES.txt
+- 02_TECH_STACK.txt
+- 03_CURSOR_RULES.txt
+- 04_GITHUB_AND_BRANDING.txt
+
+The goal is to build this project step by step.
+
+Do NOT attempt to build the entire project at once.
+
+CURRENT DEVELOPMENT METHOD
+
+Cursor handles implementation.
+
+The developer will periodically review progress and ask questions.
+
+Build one stage at a time.
+
+After each stage:
+- stop
+- explain what was created
+- explain how to run it
+- explain how to test it
+- report known issues
+- wait for the next instruction
+
+CORE ARCHITECTURE
+
+NexOps Store
+    ↓
+orders-api
+    ↓
+payment-api
+
+These applications run on Kubernetes.
+
+Monitoring collects:
+- metrics
+- logs
+- Kubernetes events
+
+Incident Detector
+    ↓
+AI Analyzer
+    ↓
+NexOps Control Center
+    ↓
+User approval
+    ↓
+Remediation
+    ↓
+Kubernetes
+    ↓
+Health verification
+
+AI IS NOT A GENERIC CHATBOT.
+
+AI must solve a real problem:
+understand Kubernetes incidents and recommend safe fixes.
+
+SECURITY
+
+AI must not directly execute arbitrary shell commands.
+
+AI recommendations must be validated.
+
+Remediation must use restricted Kubernetes permissions.
+
+Use Kubernetes RBAC and least privilege.
+
+CORPORATE ENVIRONMENT
+
+Development may happen on an Amdocs POC server.
+
+The POC may require a proxy.
+
+A proxy is an environment-specific configuration only.
+
+Do not build the application around the corporate proxy.
+
+Final AWS deployment must work independently from the corporate network.
+
+Do not use:
+- corporate credentials
+- corporate source code
+- corporate documentation
+- customer information
+- proprietary configurations
+
+PROJECT STYLE
+
+Keep everything:
+- simple
+- readable
+- production-style
+- secure
+- testable
+- easy to explain
+
+Avoid unnecessary technologies.
+
+Do not add complexity just to make the project look impressive.
+
+The project should be impressive because the architecture and implementation solve a real problem.
+
+CURRENT TASK
+
+Wait for the developer to specify the current build stage.
+
+Do not automatically start implementing future stages.
