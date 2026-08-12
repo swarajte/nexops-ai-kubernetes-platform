@@ -21,6 +21,16 @@ KUBERNETES
 - kubectl
 - Helm
 
+Deployment approach for Stage 3:
+1. Raw Kubernetes YAML first (Deployments, Services, ConfigMaps/Secrets as needed)
+2. Then package the working manifests into a Helm chart under helm/nexops
+
+Helm is used to manage configurable values such as:
+- image repository / tag
+- replica count
+- service ports
+- resource requests / limits
+
 Local development:
 - existing local/POC Kubernetes environment
 

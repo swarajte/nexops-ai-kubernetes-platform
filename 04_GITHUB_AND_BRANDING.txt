@@ -114,7 +114,9 @@ README SHOULD EVENTUALLY CONTAIN
 - features
 - technology stack
 - local setup
-- Kubernetes setup
+- Docker Compose setup
+- Kubernetes setup (raw YAML first)
+- Helm chart setup (helm install / helm upgrade)
 - AWS setup
 - incident examples
 - AI flow

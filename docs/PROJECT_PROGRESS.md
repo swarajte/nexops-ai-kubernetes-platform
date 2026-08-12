@@ -15,6 +15,8 @@ User → NexOps Store (frontend) → orders-api → payment-api
 
 Docker Compose (Stage 2) runs the same flow as three containers on one Docker network.
 
+Stage 3 plan: deploy that stack to Kubernetes using raw YAML first, then package it with Helm (`helm/nexops`).
+
 Later platform flow (not started yet):
 
 ```
@@ -28,7 +30,8 @@ Failure → Monitoring → Incident Detector → AI Analyzer
 | Frontend | React + TypeScript (Vite) |
 | Backend | Python + FastAPI |
 | Containers | Docker + Docker Compose |
-| Future | Kubernetes, Prometheus, Grafana, Loki, Terraform, AWS EKS, GitHub Actions, LLM API |
+| Orchestration (next) | Kubernetes + Helm |
+| Future | Prometheus, Grafana, Loki, Terraform, AWS EKS, GitHub Actions, LLM API |
 
 ## Build stages
 
@@ -36,7 +39,7 @@ Failure → Monitoring → Incident Detector → AI Analyzer
 |-------|------|--------|
 | 1 | Applications (frontend, orders-api, payment-api) | COMPLETED |
 | 2 | Local Docker | COMPLETED |
-| 3 | Local Kubernetes | NOT STARTED |
+| 3 | Kubernetes + Helm | NOT STARTED |
 | 4 | Failure Simulation | NOT STARTED |
 | 5 | Monitoring | NOT STARTED |
 | 6 | Incident Detector | NOT STARTED |
@@ -53,7 +56,7 @@ Failure → Monitoring → Incident Detector → AI Analyzer
 
 ## Current stage
 **Stage 2 — Local Docker (COMPLETED)**  
-Next: Stage 3 — Local Kubernetes (not started)
+Next: Stage 3 — Kubernetes + Helm (not started)
 
 ## Important decisions
 - GitHub repository `nexops-ai-kubernetes-platform` is the permanent source of truth.
@@ -61,6 +64,7 @@ Next: Stage 3 — Local Kubernetes (not started)
 - Existing Stage 1 Dockerfiles were kept; Stage 2 added `docker-compose.yml` and `.dockerignore` files only.
 - Frontend nginx proxies `/api` to `orders-api`; `orders-api` reaches `payment-api` via Docker DNS (`PAYMENT_API_URL=http://payment-api:8000`).
 - POC/corporate proxy remains environment-specific and is not hardcoded into Compose or application code.
+- Stage 3 will include Helm: learn raw Kubernetes YAML first, verify it works, then package into `helm/nexops` for `helm install` / `helm upgrade`. Do not hide Kubernetes behind Helm.
 
 ## Known issues
 - Local Windows workstation does not have Git installed; Git commit/push is done from the POC environment which already has authenticated GitHub credentials.

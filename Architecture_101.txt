@@ -69,6 +69,7 @@
 					  
 
 
+
 The store is:
 
 frontend
@@ -123,6 +124,8 @@ Final Core Architecture :
                             │
                             ▼
                        Kubernetes
+                    (raw YAML first,
+                     then Helm chart)
                             │
               ┌─────────────┼─────────────┐
               │             │             │

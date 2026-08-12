@@ -36,18 +36,72 @@ Test:
 - payment flow
 
 
-STAGE 3 — Local Kubernetes
+STAGE 3 — Kubernetes + Helm
 
-Deploy the applications to Kubernetes.
+Deploy the NexOps application stack to Kubernetes, then package the
+Kubernetes configuration using Helm.
+
+Learning approach (important):
+
+1. First create and understand basic Kubernetes resources using normal YAML.
+2. Verify the raw Kubernetes deployment works end to end.
+3. Then convert/package that deployment into a Helm chart.
+
+Do not hide Kubernetes behind Helm.
+We must understand the raw YAML first, then understand how Helm makes
+managing it easier.
+
+Part A — Raw Kubernetes YAML
 
 Create:
 - Deployments
 - Services
 - ConfigMaps where needed
 - Secrets only where actually needed
-- health checks
+- health checks (liveness/readiness)
+- resource requests and limits
 
-Verify the complete application flow.
+Verify:
+
+frontend
+  ↓
+orders-api
+  ↓
+payment-api
+
+Part B — Helm packaging
+
+After the raw manifests work, package them into a Helm chart.
+
+Expected structure:
+
+helm/
+└── nexops/
+    ├── Chart.yaml
+    ├── values.yaml
+    └── templates/
+        ├── frontend.yaml
+        ├── orders-api.yaml
+        ├── payment-api.yaml
+        └── services.yaml
+
+Use values.yaml for configurable values such as:
+- image repository
+- image tag
+- replica count
+- service port
+- resource requests/limits
+
+Final deployment should be possible with:
+
+helm install nexops ./helm/nexops
+
+Upgrades should be possible with:
+
+helm upgrade nexops ./helm/nexops
+
+Do not start monitoring, AI, incident detection, remediation, Terraform,
+or AWS in this stage.
 
 
 STAGE 4 — Failure Simulation
