@@ -1,6 +1,7 @@
-# NexOps commands (Stages 1–5)
+# NexOps commands (Stages 1–6)
 
 Use this while preparing interviews / reverse-engineering.
+**Simple English for every piece:** [SIMPLE_GUIDE.md](SIMPLE_GUIDE.md).
 GitHub is the source of truth: `nexops-ai-kubernetes-platform`.
 
 POC project path:
@@ -29,6 +30,7 @@ Same flow in every stage. Only the *runtime* changes:
 | 3 | Three Kubernetes pods (raw YAML first, then Helm) |
 | 4 | Same Helm install, with *intentional* payment-api failures |
 | 5 | Same pods, plus Prometheus scrape, Grafana dashboards, Loki logs |
+| 6 | Same cluster, plus incident-detector watching pods and storing OPEN/RESOLVED incidents |
 
 ---
 
@@ -506,3 +508,23 @@ kubectl -n nexops get events --sort-by='.lastTimestamp'
 - Helm `nexops-loki` in `nexops-monitoring`: Loki + Promtail.
 - Cluster Grafana: `http://10.245.101.134:2400` dashboard **NexOps Store**.
 Leave payment-api healthy (`failureMode: none`) unless you are demonstrating a failure.
+
+## Stage 6 — Incident detector
+
+Simple explanation: [SIMPLE_GUIDE.md](SIMPLE_GUIDE.md) sections 8 and 11.
+
+**What:** A Python pod that lists pods in `nexops` every 10 seconds. If a pod looks wrong, it **opens an incident**. If the problem is gone, it marks that incident **RESOLVED**.
+
+```bash
+kubectl -n nexops exec deploy/incident-detector -- python -c "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8080/incidents').read().decode())"
+```
+
+Demo: overlay oom, wait ~30s, read OPEN incidents, then `helm upgrade ... --reset-values`.
+
+---
+
+## What is running now (after Stage 6)
+
+- Helm `nexops` in `nexops`: store + incident-detector v1.
+- Grafana: **http://10.245.101.134:3300**
+Leave payment-api healthy unless demonstrating a failure.

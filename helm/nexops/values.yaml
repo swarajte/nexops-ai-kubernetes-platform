@@ -52,7 +52,6 @@ monitoring:
   serviceMonitor:
     enabled: true
     interval: 15s
-    # Must match kube-prometheus-stack serviceMonitorSelector (release: prometheus).
     releaseLabel: prometheus
   grafana:
     dashboard:
@@ -60,3 +59,20 @@ monitoring:
     lokiDatasource:
       enabled: true
       url: http://nexops-loki.nexops-monitoring.svc.cluster.local:3100
+
+incidentDetector:
+  replicaCount: 1
+  image:
+    repository: nexops/incident-detector
+    tag: v1
+    pullPolicy: IfNotPresent
+  service:
+    port: 8080
+  pollSeconds: 10
+  resources:
+    requests:
+      cpu: 25m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
