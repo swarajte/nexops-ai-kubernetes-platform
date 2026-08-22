@@ -1,0 +1,43 @@
+{{- if .Values.monitoring.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: payment-api
+  labels:
+    app.kubernetes.io/name: nexops
+    app.kubernetes.io/component: payment-api
+    release: {{ .Values.monitoring.serviceMonitor.releaseLabel | quote }}
+spec:
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nexops
+      app.kubernetes.io/component: payment-api
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: {{ .Values.monitoring.serviceMonitor.interval }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: orders-api
+  labels:
+    app.kubernetes.io/name: nexops
+    app.kubernetes.io/component: orders-api
+    release: {{ .Values.monitoring.serviceMonitor.releaseLabel | quote }}
+spec:
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nexops
+      app.kubernetes.io/component: orders-api
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: {{ .Values.monitoring.serviceMonitor.interval }}
+{{- end }}

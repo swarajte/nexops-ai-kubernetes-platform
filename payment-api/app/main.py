@@ -2,8 +2,12 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 from app import fail
+from app.observability import RequestLogMiddleware, setup_logging, setup_metrics
 
-app = FastAPI(title="NexOps payment-api", version="1.1.0")
+app = FastAPI(title="NexOps payment-api", version="1.2.0")
+_logger = setup_logging("payment-api")
+setup_metrics(app)
+app.add_middleware(RequestLogMiddleware, logger=_logger)
 fail.apply_startup_mode()
 
 

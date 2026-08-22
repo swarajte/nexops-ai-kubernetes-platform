@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: orders-api
-          image: nexops/orders-api:v1
+          image: nexops/orders-api:v2
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

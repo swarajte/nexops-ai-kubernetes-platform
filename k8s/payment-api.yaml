@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: payment-api
-          image: nexops/payment-api:v2
+          image: nexops/payment-api:v3
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

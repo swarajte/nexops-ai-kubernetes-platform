@@ -1,0 +1,41 @@
+# Learning copy (Stage 5). Live install is Helm: helm/nexops/templates/servicemonitors.yaml
+# Label release: prometheus is required so the existing kube-prometheus-stack operator scrapes us.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: payment-api
+  namespace: nexops
+  labels:
+    app.kubernetes.io/name: nexops
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames:
+      - nexops
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: payment-api
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: orders-api
+  namespace: nexops
+  labels:
+    app.kubernetes.io/name: nexops
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames:
+      - nexops
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: orders-api
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s

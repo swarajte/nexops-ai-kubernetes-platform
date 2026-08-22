@@ -1,4 +1,4 @@
-# NexOps commands (Stages 1–4)
+# NexOps commands (Stages 1–5)
 
 Use this while preparing interviews / reverse-engineering.
 GitHub is the source of truth: `nexops-ai-kubernetes-platform`.
@@ -28,6 +28,7 @@ Same flow in every stage. Only the *runtime* changes:
 | 2 | Three Docker containers (`docker compose`) |
 | 3 | Three Kubernetes pods (raw YAML first, then Helm) |
 | 4 | Same Helm install, with *intentional* payment-api failures |
+| 5 | Same pods, plus Prometheus scrape, Grafana dashboards, Loki logs |
 
 ---
 
@@ -356,7 +357,137 @@ Reset: `POST /fail/reset`
 
 ---
 
-## What is running now (after Stage 4)
+## Stage 5 — Monitoring
 
-Helm release `nexops` in namespace `nexops`, **payment-api image `nexops/payment-api:v2`** with failure endpoints.
-Leave it healthy (`failureMode: none`) unless you are demonstrating a failure.
+POC already had **kube-prometheus-stack** in namespace `monitoring` (Prometheus, Grafana, kube-state-metrics, node-exporter). We did **not** install a second full stack.
+
+| Signal | Where it comes from |
+|--------|---------------------|
+| CPU / memory | cAdvisor metrics already scraped by cluster Prometheus |
+| Pod restarts / phase / OOMKilled reason | kube-state-metrics (`kube_pod_*`) |
+| Kubernetes events | `kubectl get events -n nexops` (and restart/OOM metrics on the dashboard) |
+| Request rate, latency, HTTP errors | `/metrics` on orders-api and payment-api + ServiceMonitor |
+| Application logs | Loki + Promtail (only namespace `nexops`) |
+
+Grafana sidecar watches **all namespaces** for ConfigMaps labeled `grafana_dashboard=1` / `grafana_datasource=1`, so NexOps dashboards live in namespace `nexops`.
+
+### Start / apply (from POC project path)
+
+```bash
+cd /storage/swarajt/nexops-ai-kubernetes-platform
+
+# 1) Rebuild APIs (new /metrics endpoint). Tags must bump because imagePullPolicy is IfNotPresent.
+docker build -t nexops/payment-api:v3 ./payment-api
+docker build -t nexops/orders-api:v2 ./orders-api
+docker save nexops/payment-api:v3 nexops/orders-api:v2 | ctr -n k8s.io images import -
+
+# 2) Loki + Promtail (Grafana/Prometheus already exist in monitoring)
+helm upgrade --install nexops-loki grafana/loki-stack \
+  -n nexops-monitoring --create-namespace \
+  -f helm/nexops-monitoring/loki-stack-values.yaml
+
+# 3) ServiceMonitors + Grafana dashboard + Loki datasource + new image tags
+helm upgrade nexops ./helm/nexops -n nexops --reset-values
+```
+
+`--reset-values` clears any leftover Stage 4 failure overlay.
+
+### Stop / uninstall monitoring only (leave the store running)
+
+```bash
+helm uninstall nexops-loki -n nexops-monitoring
+kubectl delete ns nexops-monitoring
+```
+
+Then disable NexOps scrape/dashboards if you want a store-only cluster:
+
+```bash
+helm upgrade nexops ./helm/nexops -n nexops --reset-values \
+  --set monitoring.serviceMonitor.enabled=false \
+  --set monitoring.grafana.dashboard.enabled=false \
+  --set monitoring.grafana.lokiDatasource.enabled=false
+```
+
+### Open Grafana (from Windows)
+
+Existing Grafana NodePort on the POC node:
+
+```
+http://10.245.101.134:2400
+```
+
+Folder **NexOps**, dashboard **NexOps Store**.
+
+Admin user/password are in the cluster secret (do not commit them):
+
+```bash
+kubectl -n monitoring get secret prometheus-grafana \
+  -o jsonpath='{.data.admin-user}' | base64 -d; echo
+kubectl -n monitoring get secret prometheus-grafana \
+  -o jsonpath='{.data.admin-password}' | base64 -d; echo
+```
+
+Prometheus UI (cluster-internal, port-forward on POC):
+
+```bash
+kubectl -n monitoring port-forward --address 0.0.0.0 svc/prometheus-kube-prometheus-prometheus 9090:9090
+```
+
+Then `http://10.245.101.134:9090` → Status → Targets, look for `nexops/payment-api` and `nexops/orders-api`.
+
+### What / why / how / recover
+
+**Prometheus (reused)**  
+**What:** Time-series DB that scrapes HTTP `/metrics`.  
+**Why:** CPU, memory, restarts, and request counters need a scraper + TSDB.  
+**How:** Existing operator watches ServiceMonitors with label `release: prometheus` in any namespace. NexOps chart creates those.  
+**Recover:** `kubectl -n nexops get servicemonitor`; if targets are down, check `/metrics` on the pod and that the label is exactly `release: prometheus`.
+
+**Grafana (reused)**  
+**What:** Dashboards over Prometheus + Loki.  
+**Why:** One place to see a failure (OOM, 5xx, logs) during demos.  
+**How:** ConfigMaps `nexops-grafana-dashboard` and `nexops-grafana-loki-datasource`. Sidecar imports them.  
+**Recover:** Delete/recreate the ConfigMaps via `helm upgrade`; wait ~30s for sidecar. If the dashboard is missing, confirm labels `grafana_dashboard=1`.
+
+**Loki + Promtail (we installed)**  
+**What:** Loki stores logs; Promtail DaemonSet tails container logs and pushes them.  
+**Why:** Prometheus does not store log lines; Stage 5 brief asks for application logs.  
+**How:** Helm release `nexops-loki` in `nexops-monitoring`. Promtail `keep`s only `namespace=nexops`.  
+**Recover:** `kubectl -n nexops-monitoring get pods`; `kubectl logs -n nexops-monitoring -l app=loki`. If Loki is Ready but Grafana shows no logs, Promtail may have started first: `kubectl -n nexops-monitoring rollout restart daemonset/nexops-loki-promtail`. Uninstall with `helm uninstall nexops-loki -n nexops-monitoring`.
+
+**App `/metrics`**  
+**What:** Prometheus text format from `prometheus-fastapi-instrumentator`.  
+**Why:** Request count, latency histogram, HTTP status (errors) are application-level, not in cAdvisor.  
+**How:** `GET /metrics` on payment-api:8000 and orders-api:8001.  
+**Recover:** If `/metrics` 404, you are on an old image (v1/v2 payment without instrumentator). Rebuild `v3` / orders `v2` and import to containerd.
+
+### Demo: see a failure on the dashboard
+
+```bash
+helm upgrade nexops ./helm/nexops -n nexops --reset-values -f helm/nexops/failures/oom.yaml
+# Grafana: restarts + last terminated reason OOMKilled; Loki: container restart
+helm upgrade nexops ./helm/nexops -n nexops --reset-values
+```
+
+HTTP errors (no pod restart):
+
+```bash
+kubectl -n nexops exec deploy/orders-api -- python -c "import urllib.request; urllib.request.urlopen(urllib.request.Request('http://payment-api:8000/fail/errors', method='POST', data=b'{\"rate\":1}', headers={'Content-Type':'application/json'}))"
+# generate traffic via the store, then Grafana 5xx ratio
+kubectl -n nexops exec deploy/orders-api -- python -c "import urllib.request; urllib.request.urlopen(urllib.request.Request('http://payment-api:8000/fail/reset', method='POST'))"
+```
+
+### Events
+
+```bash
+kubectl -n nexops get events --sort-by='.lastTimestamp'
+```
+
+---
+
+## What is running now (after Stage 5)
+
+- Helm `nexops` in `nexops`: frontend `v1`, orders-api `v2`, payment-api `v3`, ServiceMonitors, Grafana dashboard ConfigMaps.
+- Helm `nexops-loki` in `nexops-monitoring`: Loki + Promtail.
+- Cluster Grafana: `http://10.245.101.134:2400` dashboard **NexOps Store**.
+Leave payment-api healthy (`failureMode: none`) unless you are demonstrating a failure.

@@ -1,0 +1,22 @@
+{{- if .Values.monitoring.grafana.lokiDatasource.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nexops-grafana-loki-datasource
+  labels:
+    app.kubernetes.io/name: nexops
+    grafana_datasource: "1"
+data:
+  nexops-loki.yaml: |-
+    apiVersion: 1
+    datasources:
+      - name: NexOps-Loki
+        type: loki
+        access: proxy
+        uid: nexops-loki
+        url: {{ .Values.monitoring.grafana.lokiDatasource.url | quote }}
+        isDefault: false
+        editable: false
+        jsonData:
+          maxLines: 1000
+{{- end }}

@@ -1,0 +1,14 @@
+{{- if .Values.monitoring.grafana.dashboard.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nexops-grafana-dashboard
+  labels:
+    app.kubernetes.io/name: nexops
+    grafana_dashboard: "1"
+  annotations:
+    grafana_folder: NexOps
+data:
+  nexops-store.json: |
+{{ .Files.Get "dashboards/nexops-store.json" | indent 4 }}
+{{- end }}

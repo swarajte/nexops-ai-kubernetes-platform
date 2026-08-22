@@ -7,7 +7,12 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-app = FastAPI(title="NexOps orders-api", version="1.0.0")
+from app.observability import RequestLogMiddleware, setup_logging, setup_metrics
+
+app = FastAPI(title="NexOps orders-api", version="1.1.0")
+_logger = setup_logging("orders-api")
+setup_metrics(app)
+app.add_middleware(RequestLogMiddleware, logger=_logger)
 
 PAYMENT_API_URL = os.getenv("PAYMENT_API_URL", "http://localhost:8000")
 ALLOWED_ORIGINS = [

@@ -18,7 +18,7 @@ ordersApi:
   replicaCount: 1
   image:
     repository: nexops/orders-api
-    tag: v1
+    tag: v2
     pullPolicy: IfNotPresent
   service:
     port: 8001
@@ -35,7 +35,7 @@ paymentApi:
   replicaCount: 1
   image:
     repository: nexops/payment-api
-    tag: v2
+    tag: v3
     pullPolicy: IfNotPresent
   service:
     port: 8000
@@ -47,3 +47,16 @@ paymentApi:
     limits:
       cpu: 200m
       memory: 128Mi
+
+monitoring:
+  serviceMonitor:
+    enabled: true
+    interval: 15s
+    # Must match kube-prometheus-stack serviceMonitorSelector (release: prometheus).
+    releaseLabel: prometheus
+  grafana:
+    dashboard:
+      enabled: true
+    lokiDatasource:
+      enabled: true
+      url: http://nexops-loki.nexops-monitoring.svc.cluster.local:3100

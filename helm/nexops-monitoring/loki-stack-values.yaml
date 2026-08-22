@@ -1,0 +1,69 @@
+# Values for grafana/loki-stack on the shared POC cluster.
+# Do NOT enable Grafana or Prometheus here — kube-prometheus-stack already
+# runs in namespace monitoring. This chart only adds Loki + Promtail.
+
+test_pod:
+  enabled: false
+
+grafana:
+  enabled: false
+
+prometheus:
+  enabled: false
+
+fluent-bit:
+  enabled: false
+
+filebeat:
+  enabled: false
+
+logstash:
+  enabled: false
+
+loki:
+  enabled: true
+  image:
+    repository: docker-registry-proxy.corp.amdocs.com/grafana/loki
+    tag: 2.9.3
+    pullPolicy: IfNotPresent
+  persistence:
+    enabled: true
+    storageClassName: nfs
+    size: 5Gi
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  config:
+    auth_enabled: false
+
+promtail:
+  enabled: true
+  image:
+    registry: docker-registry-proxy.corp.amdocs.com
+    repository: grafana/promtail
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 25m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+  tolerations:
+    - key: node-role.kubernetes.io/infra
+      operator: Exists
+      effect: PreferNoSchedule
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: PreferNoSchedule
+  config:
+    snippets:
+      extraRelabelConfigs:
+        - action: keep
+          regex: nexops
+          source_labels:
+            - __meta_kubernetes_namespace

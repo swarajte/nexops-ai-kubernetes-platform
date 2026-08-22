@@ -10,6 +10,12 @@ def setup_function():
     fail.reset()
 
 
+def test_metrics():
+    response = client.get("/metrics")
+    assert response.status_code == 200
+    assert "http_request_duration_seconds" in response.text
+
+
 def test_health():
     response = client.get("/health")
     assert response.status_code == 200

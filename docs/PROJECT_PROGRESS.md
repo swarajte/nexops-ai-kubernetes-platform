@@ -29,7 +29,7 @@ Failure → Monitoring → Incident Detector → AI Analyzer
 | Backend | Python + FastAPI |
 | Containers | Docker + Docker Compose |
 | Orchestration | Kubernetes + Helm |
-| Future | Prometheus, Grafana, Loki, Terraform, AWS EKS, GitHub Actions, LLM API |
+| Future | Incident detector, AI, Terraform, AWS EKS, GitHub Actions |
 
 ## Build stages
 
@@ -39,7 +39,7 @@ Failure → Monitoring → Incident Detector → AI Analyzer
 | 2 | Local Docker | COMPLETED |
 | 3 | Kubernetes + Helm | COMPLETED |
 | 4 | Failure Simulation | COMPLETED |
-| 5 | Monitoring | NOT STARTED |
+| 5 | Monitoring | COMPLETED |
 | 6 | Incident Detector | NOT STARTED |
 | 7 | AI Analyzer | NOT STARTED |
 | 8 | NexOps Control Center | NOT STARTED |
@@ -53,8 +53,8 @@ Failure → Monitoring → Incident Detector → AI Analyzer
 | 16 | Reverse Engineering | NOT STARTED |
 
 ## Current stage
-**Stage 4 — Failure Simulation (COMPLETED)**  
-Next: Stage 5 — Monitoring (not started)
+**Stage 5 — Monitoring (COMPLETED)**  
+Next: Stage 6 — Incident Detector (not started)
 
 ## Important decisions
 - GitHub repository `nexops-ai-kubernetes-platform` is the permanent source of truth.
@@ -66,10 +66,12 @@ Next: Stage 5 — Monitoring (not started)
 - Live cluster stays on Helm in namespace `nexops`. Raw YAML in `k8s/` is updated to match probes but is not the live install.
 - Commands for interviews: `docs/COMMANDS.md`.
 - Helm 4 keeps last `-f` overlay on upgrade unless you pass `--reset-values`.
+- Stage 5 reuses existing Prometheus/Grafana in `monitoring`; Loki is a new Helm release `nexops-loki` in `nexops-monitoring`.
+- ServiceMonitors must have label `release: prometheus` or the existing operator ignores them.
 
 ## Known issues
 - Local Windows workstation does not have Git; push is from POC.
-- Images are local to the POC node (`nexops/payment-api:v2` after Stage 4).
+- Images are local to the POC node (`nexops/payment-api:v3`, `nexops/orders-api:v2` after Stage 5).
 - After a failure demo, always `helm upgrade ... --reset-values` so overlays do not stick (Helm 4).
 
 ## Last updated

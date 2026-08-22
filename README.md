@@ -3,7 +3,7 @@
 **NexOps — AI Kubernetes Incident Response & Self-Healing Platform**
 
 ## Current status
-Stage 4 — Failure simulation completed.
+Stage 5 — Monitoring completed.
 
 Start/stop and failure-demo commands: **[docs/COMMANDS.md](docs/COMMANDS.md)**
 
@@ -18,7 +18,7 @@ NexOps Store (frontend)
 
 ## Kubernetes + Helm (Stage 3)
 
-Raw manifests (for learning) live in `k8s/`.  
+Raw manifests (for learning) live in `k8s/`.
 The Helm chart is `helm/nexops`.
 
 Build images on the Kubernetes node, then import them into containerd so kubelet can use them:
@@ -50,6 +50,25 @@ helm upgrade nexops ./helm/nexops -n nexops --reset-values
 ```
 
 What each failure looks like, why it happens, and how to recover: **[docs/COMMANDS.md](docs/COMMANDS.md)** (Stage 4).
+
+## Monitoring (Stage 5)
+
+This POC already runs **kube-prometheus-stack** in namespace `monitoring`. NexOps reuses that Prometheus and Grafana. We add:
+
+- `/metrics` on orders-api and payment-api
+- ServiceMonitors (`release: prometheus`)
+- Grafana dashboard **NexOps Store** (folder NexOps)
+- Loki + Promtail via `helm/nexops-monitoring/loki-stack-values.yaml`
+
+```bash
+helm upgrade --install nexops-loki grafana/loki-stack \
+  -n nexops-monitoring --create-namespace \
+  -f helm/nexops-monitoring/loki-stack-values.yaml
+helm upgrade nexops ./helm/nexops -n nexops --reset-values
+```
+
+Grafana (existing NodePort): `http://10.245.101.134:2400`
+Commands, Grafana login retrieval, and recover steps: **[docs/COMMANDS.md](docs/COMMANDS.md)** (Stage 5).
 
 Access the store (port-forward listens on the machine where you run kubectl):
 
