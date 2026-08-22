@@ -410,10 +410,25 @@ helm upgrade nexops ./helm/nexops -n nexops --reset-values \
 
 ### Open Grafana (from Windows)
 
-Existing Grafana NodePort on the POC node:
+`http://10.245.101.134:2400` **will not work**. There is a NodePort Service named `prometheus-grafana-ext` on 2400, but it points at **port 9090 on the Grafana pod**. Grafana's UI listens on **3000**. The node iptables rule for 2400 therefore hits a closed port → Chrome `ERR_CONNECTION_REFUSED` (same error even if you curl on the POC). Do **not** "fix" that Service; it belongs to the cluster monitoring Helm release, not NexOps.
 
+Use a **port-forward**, same idea as the store (this one is already running on POC as `0.0.0.0:3300`):
+
+On POC:
+```bash
+kubectl -n monitoring port-forward --address 0.0.0.0 svc/prometheus-grafana 3300:80
 ```
-http://10.245.101.134:2400
+
+On Windows Chrome: **http://10.245.101.134:3300**  
+(not 2400, not `localhost` unless you also SSH-tunnel)
+
+SSH tunnel instead (then http://localhost:3300 on Windows):
+```bash
+ssh -L 3300:127.0.0.1:3300 root@10.245.101.134
+```
+Keep the POC port-forward running. On POC you can bind localhost only:
+```bash
+kubectl -n monitoring port-forward svc/prometheus-grafana 3300:80
 ```
 
 Folder **NexOps**, dashboard **NexOps Store**.

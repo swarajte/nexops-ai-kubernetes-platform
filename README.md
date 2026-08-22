@@ -67,7 +67,7 @@ helm upgrade --install nexops-loki grafana/loki-stack \
 helm upgrade nexops ./helm/nexops -n nexops --reset-values
 ```
 
-Grafana (existing NodePort): `http://10.245.101.134:2400`
+Grafana (existing NodePort): `http://10.245.101.134:3300`
 Commands, Grafana login retrieval, and recover steps: **[docs/COMMANDS.md](docs/COMMANDS.md)** (Stage 5).
 
 Access the store (port-forward listens on the machine where you run kubectl):
