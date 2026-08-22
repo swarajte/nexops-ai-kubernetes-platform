@@ -5,6 +5,8 @@
 ## Current status
 Stage 3 — Kubernetes + Helm completed.
 
+Start/stop commands for Stages 1–3: **[docs/COMMANDS.md](docs/COMMANDS.md)**
+
 ## Application flow
 ```
 NexOps Store (frontend)
@@ -35,13 +37,14 @@ helm install nexops ./helm/nexops -n nexops --create-namespace
 helm upgrade nexops ./helm/nexops -n nexops
 ```
 
-Access the store:
+Access the store (port-forward listens on the machine where you run kubectl):
 
 ```bash
 kubectl -n nexops port-forward svc/frontend 3000:80
 ```
 
-Open http://localhost:3000
+If kubectl runs **on POC**, `http://localhost:3000` works **on POC**, not on your laptop Chrome.
+From Windows, use an SSH tunnel or `--address 0.0.0.0` and the POC IP. See [docs/COMMANDS.md](docs/COMMANDS.md).
 
 Optional: apply the raw YAML instead of Helm (do not mix both):
 
