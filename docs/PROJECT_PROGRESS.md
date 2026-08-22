@@ -13,11 +13,7 @@ Monitored application flow:
 User → NexOps Store (frontend) → orders-api → payment-api
 ```
 
-Docker Compose (Stage 2) runs the same flow as three containers on one Docker network.
-
-Stage 3 runs the same flow on Kubernetes in namespace `nexops`:
-1. Raw YAML in `k8s/` (kept for learning)
-2. Helm chart in `helm/nexops` (current install on POC)
+Stage 4 adds **controlled failure injection on payment-api** so we can create real Kubernetes symptoms without touching other apps.
 
 Later platform flow (not started yet):
 
@@ -42,7 +38,7 @@ Failure → Monitoring → Incident Detector → AI Analyzer
 | 1 | Applications (frontend, orders-api, payment-api) | COMPLETED |
 | 2 | Local Docker | COMPLETED |
 | 3 | Kubernetes + Helm | COMPLETED |
-| 4 | Failure Simulation | NOT STARTED |
+| 4 | Failure Simulation | COMPLETED |
 | 5 | Monitoring | NOT STARTED |
 | 6 | Incident Detector | NOT STARTED |
 | 7 | AI Analyzer | NOT STARTED |
@@ -57,23 +53,24 @@ Failure → Monitoring → Incident Detector → AI Analyzer
 | 16 | Reverse Engineering | NOT STARTED |
 
 ## Current stage
-**Stage 3 — Kubernetes + Helm (COMPLETED)**  
-Next: Stage 4 — Failure Simulation (not started)
+**Stage 4 — Failure Simulation (COMPLETED)**  
+Next: Stage 5 — Monitoring (not started)
 
 ## Important decisions
 - GitHub repository `nexops-ai-kubernetes-platform` is the permanent source of truth.
-- Stage 1/2 services stay simple: no database, no Redis/Kafka.
-- Frontend nginx proxies `/api` to `orders-api`; `orders-api` reaches `payment-api` via cluster DNS (`PAYMENT_API_URL=http://payment-api:8000`).
-- POC/corporate proxy remains environment-specific and is not hardcoded into Compose, Kubernetes, or Helm.
-- Stage 3: raw Kubernetes YAML first, verified, then replaced with `helm install` in namespace `nexops`. Raw YAML remains in `k8s/`.
-- ClusterIP services only; access via `kubectl port-forward`.
-- Images built on POC and imported into containerd (`imagePullPolicy: IfNotPresent`). No registry yet.
-- No Kubernetes Secrets in Stage 3 (nothing secret to store).
+- Failures are **intentional and reversible** (Helm overlays under `helm/nexops/failures/` plus HTTP `/fail/*` on payment-api).
+- First failure is **OOMKilled** on payment-api (matches the project brief).
+- Liveness = `/health`, readiness = `/ready` so a pod can be unready without being restarted.
+- ImagePullBackOff is a **bad image tag**, not application code.
+- CrashLoopBackOff is `FAILURE_MODE=crash` (`os._exit(1)` at startup).
+- Live cluster stays on Helm in namespace `nexops`. Raw YAML in `k8s/` is updated to match probes but is not the live install.
+- Commands for interviews: `docs/COMMANDS.md`.
+- Helm 4 keeps last `-f` overlay on upgrade unless you pass `--reset-values`.
 
 ## Known issues
-- Local Windows workstation does not have Git installed; Git commit/push is done from the POC environment.
-- POC Docker/GitHub access may need an environment-specific proxy (not committed).
-- Images are local to the POC node until a registry (ECR) is added later.
+- Local Windows workstation does not have Git; push is from POC.
+- Images are local to the POC node (`nexops/payment-api:v2` after Stage 4).
+- After a failure demo, always `helm upgrade ... --reset-values` so overlays do not stick (Helm 4).
 
 ## Last updated
 2026-08-22

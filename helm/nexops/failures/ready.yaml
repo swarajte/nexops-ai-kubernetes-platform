@@ -1,0 +1,3 @@
+# Readiness failure: pod stays Running but is not Ready, so Service sends it no traffic.
+paymentApi:
+  failureMode: ready

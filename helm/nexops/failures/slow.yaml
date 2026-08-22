@@ -1,0 +1,3 @@
+# Slow application: /pay sleeps before answering (timeouts / high latency).
+paymentApi:
+  failureMode: slow

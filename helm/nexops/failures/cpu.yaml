@@ -1,0 +1,3 @@
+# High CPU: a background busy loop burns CPU (later visible in Prometheus).
+paymentApi:
+  failureMode: cpu

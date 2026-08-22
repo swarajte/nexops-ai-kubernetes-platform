@@ -1,0 +1,11 @@
+# OOMKilled: kubelet kills the container because it exceeded its memory limit.
+# WHAT you will see: Restart count increases, lastState.reason=OOMKilled
+paymentApi:
+  failureMode: oom
+  resources:
+    requests:
+      cpu: 25m
+      memory: 32Mi
+    limits:
+      cpu: 200m
+      memory: 32Mi

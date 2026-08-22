@@ -1,0 +1,3 @@
+# High error rate: /pay returns HTTP 500 for most requests.
+paymentApi:
+  failureMode: errors

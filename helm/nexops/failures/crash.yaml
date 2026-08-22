@@ -1,0 +1,3 @@
+# CrashLoopBackOff: process exits immediately on start, kubelet restarts it forever.
+paymentApi:
+  failureMode: crash

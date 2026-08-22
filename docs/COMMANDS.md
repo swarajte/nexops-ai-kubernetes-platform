@@ -1,4 +1,4 @@
-# NexOps commands (Stages 1–3)
+# NexOps commands (Stages 1–4)
 
 Use this while preparing interviews / reverse-engineering.
 GitHub is the source of truth: `nexops-ai-kubernetes-platform`.
@@ -27,6 +27,7 @@ Same flow in every stage. Only the *runtime* changes:
 | 1 | Processes on a machine (`uvicorn` + `npm run dev`) |
 | 2 | Three Docker containers (`docker compose`) |
 | 3 | Three Kubernetes pods (raw YAML first, then Helm) |
+| 4 | Same Helm install, with *intentional* payment-api failures |
 
 ---
 
@@ -54,7 +55,7 @@ Your Windows Chrome talks to **your PC's** `localhost:3000` → nothing is liste
    ```bash
    kubectl -n nexops port-forward --address 0.0.0.0 svc/frontend 3000:80
    ```
-   Then on Windows Chrome: `http://10.245.101.134:3000`
+   Then on Windows Chrome: `http://10.245.101.134:3000`  
    (not `localhost`)
 
 3. **kubectl on Windows** pointed at the POC cluster, then:
@@ -74,6 +75,7 @@ Workdir: project root.
 ### Start
 ```bash
 # terminal 1 — payment-api
+
 cd payment-api
 pip install -r requirements-dev.txt
 uvicorn app.main:app --host 0.0.0.0 --port 8000
@@ -222,6 +224,139 @@ kubectl -n nexops exec deploy/frontend -- wget -qO- \
 
 ---
 
-## What is running now (after Stage 3)
+## Stage 4 — Failure simulation (resume / interview notes)
 
-Helm release `nexops` in namespace `nexops` (not Docker Compose, not Stage 1 processes).
+We inject failures **on purpose** so later stages can detect OOMKilled, CrashLoopBackOff, etc.
+Target is **payment-api** (the first planned incident in the project brief).
+
+Two ways to trigger:
+
+1. **Helm overlay** (Kubernetes-level, good for ImagePullBackOff / CrashLoop / OOM)
+2. **HTTP** `POST /fail/...` (runtime, then `POST /fail/reset`)
+
+Always recover with **`--reset-values`** (Helm 4 keeps the last `-f` overlay until you reset):
+
+```bash
+cd /storage/swarajt/nexops-ai-kubernetes-platform
+helm upgrade nexops ./helm/nexops -n nexops --reset-values
+```
+
+Watch with:
+
+```bash
+kubectl -n nexops get pods -w
+kubectl -n nexops describe pod -l app.kubernetes.io/component=payment-api
+kubectl -n nexops get events --sort-by='.lastTimestamp'
+```
+
+Trigger HTTP from inside the cluster:
+
+```bash
+kubectl -n nexops exec deploy/orders-api -- python -c "import urllib.request; urllib.request.urlopen(urllib.request.Request('http://payment-api:8000/fail/oom', method='POST'))"
+```
+
+### 1) OOMKilled (do this first)
+
+**What:** Linux / kubelet kills the container because it used more RAM than its **limit**.
+
+**Why:** `resources.limits.memory` is a hard cap. The process did not "crash in Python"; it was SIGKILL'd. `restartCount` goes up. `lastState.terminated.reason` is `OOMKilled`.
+
+**How:**
+```bash
+helm upgrade nexops ./helm/nexops -n nexops -f helm/nexops/failures/oom.yaml
+kubectl -n nexops get pods -l app.kubernetes.io/component=payment-api
+kubectl -n nexops describe pod -l app.kubernetes.io/component=payment-api | grep -A8 'Last State'
+```
+
+**Recover:**
+```bash
+helm upgrade nexops ./helm/nexops -n nexops --reset-values
+```
+
+### 2) CrashLoopBackOff
+
+**What:** Container starts, exits non-zero, kubelet restarts it, backoff delay grows. Pod phase is Running or CrashLoopBackOff.
+
+**Why:** `FAILURE_MODE=crash` calls `os._exit(1)` at process start. Not a probe failure — the process never stays up.
+
+**How:**
+```bash
+helm upgrade nexops ./helm/nexops -n nexops -f helm/nexops/failures/crash.yaml
+kubectl -n nexops get pods -l app.kubernetes.io/component=payment-api
+```
+
+**Recover:** `helm upgrade nexops ./helm/nexops -n nexops --reset-values`
+
+### 3) ImagePullBackOff
+
+**What:** kubelet cannot fetch the image. Pod never starts the app container.
+
+**Why:** We pointed at `nexops/payment-api:does-not-exist`. This is a **Kubernetes/image** problem, not application code.
+
+**How:**
+```bash
+helm upgrade nexops ./helm/nexops -n nexops -f helm/nexops/failures/imagepull.yaml
+kubectl -n nexops describe pod -l app.kubernetes.io/component=payment-api | grep -i 'Failed to pull\|ImagePull'
+```
+
+**Recover:** `helm upgrade nexops ./helm/nexops -n nexops --reset-values`
+
+### 4) Readiness failure
+
+**What:** Pod is **Running** but **0/1 Ready**. Endpoints empty. Buy Now fails. Liveness `/health` still 200, so kubelet does **not** restart it.
+
+**Why:** Readiness probe hits `/ready`. `FAILURE_MODE=ready` makes `/ready` return 503. This is how Kubernetes removes a pod from Service load-balancing without killing it.
+
+**How:**
+```bash
+helm upgrade nexops ./helm/nexops -n nexops -f helm/nexops/failures/ready.yaml
+kubectl -n nexops get pods -l app.kubernetes.io/component=payment-api
+kubectl -n nexops get endpoints payment-api
+```
+
+Or HTTP (no Helm overlay): `POST http://payment-api:8000/fail/ready` with `{"fail": true}`  
+Reset: `POST /fail/reset`
+
+**Recover:** `helm upgrade ... --reset-values`, or `/fail/reset` if you used HTTP.
+
+### 5) High CPU
+
+**What:** A busy-loop thread burns CPU. Pod stays Ready (until you add throttling alerts in Stage 5).
+
+**How:** overlay `failures/cpu.yaml` or `POST /fail/cpu`  
+**Recover:** `--reset-values` or `/fail/reset`
+
+### 6) High memory (not necessarily OOM)
+
+**What:** Process holds extra heap (`FAILURE_MODE=memory` allocates ~40Mi). May or may not hit the 128Mi limit.
+
+**How:** `failures/memory.yaml` or `POST /fail/memory`  
+**Recover:** `--reset-values` or `/fail/reset` (restart the pod if memory was allocated in-process).
+
+### 7) Slow application
+
+**What:** `/pay` sleeps 5 seconds. Orders look stuck / may 502 if callers time out (orders-api timeout is 5s).
+
+**How:** `failures/slow.yaml` or `POST /fail/slow`  
+**Recover:** `--reset-values` or `/fail/reset`
+
+### 8) High error rate
+
+**What:** `/pay` returns HTTP 500 for most calls. Store shows order failed. Pod can still be Ready.
+
+**How:** `failures/errors.yaml` or `POST /fail/errors` with `{"rate": 0.8}`  
+**Recover:** `--reset-values` or `/fail/reset`
+
+### Liveness vs readiness (say this in interviews)
+
+| Probe | Path | Meaning |
+|-------|------|---------|
+| liveness | `/health` | Process should be restarted if this fails |
+| readiness | `/ready` | Pod should receive traffic only if this succeeds |
+
+---
+
+## What is running now (after Stage 4)
+
+Helm release `nexops` in namespace `nexops`, **payment-api image `nexops/payment-api:v2`** with failure endpoints.
+Leave it healthy (`failureMode: none`) unless you are demonstrating a failure.

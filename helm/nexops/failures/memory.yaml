@@ -1,0 +1,3 @@
+# High memory: allocate extra RAM without intending to hit the OOM killer.
+paymentApi:
+  failureMode: memory

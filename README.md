@@ -3,9 +3,9 @@
 **NexOps — AI Kubernetes Incident Response & Self-Healing Platform**
 
 ## Current status
-Stage 3 — Kubernetes + Helm completed.
+Stage 4 — Failure simulation completed.
 
-Start/stop commands for Stages 1–3: **[docs/COMMANDS.md](docs/COMMANDS.md)**
+Start/stop and failure-demo commands: **[docs/COMMANDS.md](docs/COMMANDS.md)**
 
 ## Application flow
 ```
@@ -18,7 +18,7 @@ NexOps Store (frontend)
 
 ## Kubernetes + Helm (Stage 3)
 
-Raw manifests (for learning) live in `k8s/`.
+Raw manifests (for learning) live in `k8s/`.  
 The Helm chart is `helm/nexops`.
 
 Build images on the Kubernetes node, then import them into containerd so kubelet can use them:
@@ -36,6 +36,20 @@ Install with Helm (current method):
 helm install nexops ./helm/nexops -n nexops --create-namespace
 helm upgrade nexops ./helm/nexops -n nexops
 ```
+
+## Failure simulation (Stage 4)
+
+Intentional payment-api failures (OOMKilled first, then crash, image pull, readiness, CPU, memory, slowness, errors).
+
+```bash
+# example: OOMKilled
+helm upgrade nexops ./helm/nexops -n nexops -f helm/nexops/failures/oom.yaml
+
+# recover to healthy (Helm 4: must reset overlays)
+helm upgrade nexops ./helm/nexops -n nexops --reset-values
+```
+
+What each failure looks like, why it happens, and how to recover: **[docs/COMMANDS.md](docs/COMMANDS.md)** (Stage 4).
 
 Access the store (port-forward listens on the machine where you run kubectl):
 

@@ -1,0 +1,6 @@
+# ImagePullBackOff: kubelet cannot pull this image name/tag.
+paymentApi:
+  image:
+    repository: nexops/payment-api
+    tag: does-not-exist
+    pullPolicy: Always
