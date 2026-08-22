@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-api
+  labels:
+    app.kubernetes.io/name: nexops
+    app.kubernetes.io/component: payment-api
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: nexops
+    app.kubernetes.io/component: payment-api
+  ports:
+    - name: http
+      port: {{ .Values.paymentApi.service.port }}
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: orders-api
+  labels:
+    app.kubernetes.io/name: nexops
+    app.kubernetes.io/component: orders-api
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: nexops
+    app.kubernetes.io/component: orders-api
+  ports:
+    - name: http
+      port: {{ .Values.ordersApi.service.port }}
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  labels:
+    app.kubernetes.io/name: nexops
+    app.kubernetes.io/component: frontend
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: nexops
+    app.kubernetes.io/component: frontend
+  ports:
+    - name: http
+      port: {{ .Values.frontend.service.port }}
+      targetPort: http

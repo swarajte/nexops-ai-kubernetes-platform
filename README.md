@@ -3,7 +3,7 @@
 **NexOps — AI Kubernetes Incident Response & Self-Healing Platform**
 
 ## Current status
-Stage 2 — Local Docker completed.
+Stage 3 — Kubernetes + Helm completed.
 
 ## Application flow
 ```
@@ -14,46 +14,47 @@ NexOps Store (frontend)
     payment-api
 ```
 
-| Service | Path | Host port |
-|---------|------|-----------|
-| frontend | `frontend/` | 3000 |
-| orders-api | `orders-api/` | 8001 |
-| payment-api | `payment-api/` | 8000 |
+## Kubernetes + Helm (Stage 3)
 
-## Run with Docker Compose (recommended)
+Raw manifests (for learning) live in `k8s/`.
+The Helm chart is `helm/nexops`.
+
+Build images on the Kubernetes node, then import them into containerd so kubelet can use them:
+
+```bash
+docker build -t nexops/payment-api:v1 ./payment-api
+docker build -t nexops/orders-api:v1 ./orders-api
+docker build -t nexops/frontend:v1 ./frontend
+docker save nexops/payment-api:v1 nexops/orders-api:v1 nexops/frontend:v1 | ctr -n k8s.io images import -
+```
+
+Install with Helm (current method):
+
+```bash
+helm install nexops ./helm/nexops -n nexops --create-namespace
+helm upgrade nexops ./helm/nexops -n nexops
+```
+
+Access the store:
+
+```bash
+kubectl -n nexops port-forward svc/frontend 3000:80
+```
+
+Open http://localhost:3000
+
+Optional: apply the raw YAML instead of Helm (do not mix both):
+
+```bash
+kubectl apply -f k8s/
+```
+
+## Docker Compose (Stage 2)
 ```bash
 docker compose up --build -d
 ```
 
-Open http://localhost:3000 and click **Buy now**.
-
-Useful commands:
-```bash
-docker compose ps
-docker compose logs -f
-docker compose down
-```
-
-## Local run without Docker
-```bash
-# terminal 1
-cd payment-api
-pip install -r requirements-dev.txt
-uvicorn app.main:app --host 0.0.0.0 --port 8000
-
-# terminal 2
-cd orders-api
-pip install -r requirements-dev.txt
-set PAYMENT_API_URL=http://localhost:8000   # PowerShell: $env:PAYMENT_API_URL=...
-uvicorn app.main:app --host 0.0.0.0 --port 8001
-
-# terminal 3
-cd frontend
-npm install
-npm run dev
-```
-
-Open http://localhost:5173
+Open http://localhost:3000
 
 ## Tests
 ```bash
