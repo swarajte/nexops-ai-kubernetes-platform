@@ -3,7 +3,7 @@
 **NexOps — AI Kubernetes Incident Response & Self-Healing Platform**
 
 ## Current status
-Stage 6 — Incident detector completed.
+Stage 7 — AI analyzer completed.
 
 **How everything works in simple words:** [docs/SIMPLE_GUIDE.md](docs/SIMPLE_GUIDE.md)  
 Start/stop commands: **[docs/COMMANDS.md](docs/COMMANDS.md)**
@@ -19,26 +19,61 @@ NexOps Store (frontend)
 
 ## Kubernetes + Helm (Stage 3)
 
-Raw manifests (for learning) live in `k8s/`.
+Raw manifests (for learning) live in `k8s/`.  
 The Helm chart is `helm/nexops`.
+
+Build images on the Kubernetes node, then import them into containerd so kubelet can use them:
+
+```bash
+docker build -t nexops/payment-api:v1 ./payment-api
+docker build -t nexops/orders-api:v1 ./orders-api
+docker build -t nexops/frontend:v1 ./frontend
+docker save nexops/payment-api:v1 nexops/orders-api:v1 nexops/frontend:v1 | ctr -n k8s.io images import -
+```
+
+Install with Helm (current method):
 
 ```bash
 helm install nexops ./helm/nexops -n nexops --create-namespace
-helm upgrade nexops ./helm/nexops -n nexops --reset-values
+helm upgrade nexops ./helm/nexops -n nexops
 ```
 
 ## Failure simulation (Stage 4)
 
+Intentional payment-api failures (OOMKilled first, then crash, image pull, readiness, CPU, memory, slowness, errors).
+
 ```bash
+# example: OOMKilled
 helm upgrade nexops ./helm/nexops -n nexops -f helm/nexops/failures/oom.yaml
+
+# recover to healthy (Helm 4: must reset overlays)
 helm upgrade nexops ./helm/nexops -n nexops --reset-values
 ```
 
+What each failure looks like, why it happens, and how to recover: **[docs/COMMANDS.md](docs/COMMANDS.md)** (Stage 4).
+
 ## Monitoring (Stage 5)
 
-Reuse cluster Prometheus/Grafana. Loki is `nexops-loki`. Grafana UI: `http://10.245.101.134:3300` (not port 2400).
+This POC already runs **kube-prometheus-stack** in namespace `monitoring`. NexOps reuses that Prometheus and Grafana. We add:
+
+- `/metrics` on orders-api and payment-api
+- ServiceMonitors (`release: prometheus`)
+- Grafana dashboard **NexOps Store** (folder NexOps)
+- Loki + Promtail via `helm/nexops-monitoring/loki-stack-values.yaml`
+
+```bash
+helm upgrade --install nexops-loki grafana/loki-stack \
+  -n nexops-monitoring --create-namespace \
+  -f helm/nexops-monitoring/loki-stack-values.yaml
+helm upgrade nexops ./helm/nexops -n nexops --reset-values
+```
+
+Grafana (port-forward on POC, same pattern as the store): `http://10.245.101.134:3300`  
+Do not use `:2400` — that NodePort targets the wrong container port. See **[docs/COMMANDS.md](docs/COMMANDS.md)** (Stage 5).
 
 ## Incident detector (Stage 6)
+
+Python service in namespace `nexops`. It watches pods and stores OPEN/RESOLVED incidents (no AI, no auto-fix).
 
 ```bash
 docker build -t nexops/incident-detector:v1 ./incident-detector
@@ -47,10 +82,52 @@ helm upgrade nexops ./helm/nexops -n nexops --reset-values
 kubectl -n nexops exec deploy/incident-detector -- python -c "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8080/incidents').read().decode())"
 ```
 
+Verify it yourself (pod up, `/health`, then OOM overlay → `OPEN`, recover → `RESOLVED`): **[docs/COMMANDS.md](docs/COMMANDS.md)** Stage 6.
+
+## AI analyzer (Stage 7)
+
+Python service in namespace `nexops`. It reads OPEN incidents, gathers read-only Kubernetes evidence, and stores structured JSON (rules by default; LLM optional, not required).
+
+```bash
+docker build -t nexops/ai-analyzer:v1 ./ai-analyzer
+docker save nexops/ai-analyzer:v1 | ctr -n k8s.io images import -
+helm upgrade nexops ./helm/nexops -n nexops --reset-values
+kubectl -n nexops exec deploy/ai-analyzer -- python -c "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8081/health').read().decode())"
+```
+
+Verify it yourself (pod up, `/health`, OOM overlay → analysis JSON, recover): **[docs/COMMANDS.md](docs/COMMANDS.md)** Stage 7.
+
+Access the store (port-forward listens on the machine where you run kubectl):
+
+```bash
+kubectl -n nexops port-forward svc/frontend 3000:80
+```
+
+If kubectl runs **on POC**, `http://localhost:3000` works **on POC**, not on your laptop Chrome.
+From Windows, use an SSH tunnel or `--address 0.0.0.0` and the POC IP. See [docs/COMMANDS.md](docs/COMMANDS.md).
+
+Optional: apply the raw YAML instead of Helm (do not mix both):
+
+```bash
+kubectl apply -f k8s/
+```
+
+## Docker Compose (Stage 2)
+```bash
+docker compose up --build -d
+```
+
+Open http://localhost:3000
+
 ## Tests
 ```bash
+cd payment-api && pytest
+cd orders-api && pytest
 cd incident-detector && pytest
+cd ai-analyzer && pytest
+cd frontend && npm test
 ```
 
 ## Notes
 - No secrets, proxy URLs, or corporate credentials belong in this repository.
+- POC environments may need an external proxy for Docker image builds; that is environment-specific only.

@@ -1,4 +1,4 @@
-# NexOps commands (Stages 1–6)
+# NexOps commands (Stages 1–7)
 
 Use this while preparing interviews / reverse-engineering.
 **Simple English for every piece:** [SIMPLE_GUIDE.md](SIMPLE_GUIDE.md).
@@ -522,9 +522,106 @@ kubectl -n nexops exec deploy/incident-detector -- python -c "import urllib.requ
 Demo: overlay oom, wait ~30s, read OPEN incidents, then `helm upgrade ... --reset-values`.
 
 ---
+## Stage 7 — AI analyzer
 
-## What is running now (after Stage 6)
+Simple explanation: [SIMPLE_GUIDE.md](SIMPLE_GUIDE.md) sections 8 and 12.
 
-- Helm `nexops` in `nexops`: store + incident-detector v1.
-- Grafana: **http://10.245.101.134:3300**
-Leave payment-api healthy unless demonstrating a failure.
+**What:** A Python pod that reads OPEN incidents from `incident-detector`, gathers **read-only** Kubernetes facts (pod resources, events, log tail), and stores a structured analysis. Default brain is a **rule engine**. An LLM is optional and off on this POC.
+
+**Why:** Stage 6 only names the symptom (`OOMKilled`, `NotReady`, …). Stage 7 turns that into English + a `suggested_action` object Stage 9 can allowlist later (`increase_memory`, `restart_deployment`, …).
+
+**What it must never do:** patch/delete objects, exec into pods, or run shell as “the fix.” Role verbs are `get`/`list` only.
+
+**Where stored:** SQLite on `emptyDir` (cleared if the analyzer pod is deleted).
+
+**Ports:** detector **8080**, analyzer **8081**.
+
+### Verify it yourself (from POC)
+
+Workdir: `/storage/swarajt/nexops-ai-kubernetes-platform`
+
+**Step 1 — is the analyzer pod up?**
+
+```bash
+kubectl -n nexops get deploy,pod,svc -l app.kubernetes.io/component=ai-analyzer
+kubectl -n nexops rollout status deploy/ai-analyzer
+```
+
+Expect: `1/1` Ready, Service `ai-analyzer` on port **8081**.
+
+**Step 2 — does its HTTP API answer?**
+
+```bash
+kubectl -n nexops exec deploy/ai-analyzer -- python -c "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8081/health').read().decode())"
+kubectl -n nexops exec deploy/ai-analyzer -- python -c "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8081/analyses').read().decode())"
+```
+
+Expect: `{\"status\":\"healthy\",\"service\":\"ai-analyzer\"}`.  
+`analyses` may already have rows (for example a short `NotReady` on the analyzer itself while it was starting).
+
+**Step 3 — open it in Windows Chrome (optional)**
+
+On POC (leave this running):
+
+```bash
+kubectl -n nexops port-forward --address 0.0.0.0 svc/ai-analyzer 8081:8081
+```
+
+On Windows Chrome (not `localhost` unless you also SSH-tunnel):
+
+- http://10.245.101.134:8081/health
+- http://10.245.101.134:8081/analyses
+
+Same rule as Grafana and the detector: port-forward on POC is **not** your laptop’s localhost.
+
+**Step 4 — prove it explains a failure**
+
+```bash
+helm upgrade nexops ./helm/nexops -n nexops --reset-values -f helm/nexops/failures/oom.yaml
+sleep 45
+kubectl -n nexops exec deploy/incident-detector -- python -c "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8080/incidents?status=OPEN').read().decode())"
+kubectl -n nexops exec deploy/ai-analyzer -- python -c "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8081/analyses').read().decode())"
+```
+
+Expect JSON with `\"service\":\"payment-api\"`, `\"source\":\"rules\"`, and a `\"suggested_action\"` (often `\"type\":\"increase_memory\"`).
+If `analyses` has no payment-api row yet but an OPEN incident exists, POST `/analyze` with that incident id.
+
+`problem` on the incident may be **`NotReady`** first; the analyzer still treats NotReady + restarts/OOM events as a memory issue.
+
+**Step 5 — recover the cluster**
+
+```bash
+helm upgrade nexops ./helm/nexops -n nexops --reset-values
+kubectl -n nexops rollout status deploy/payment-api
+```
+
+Leave payment-api healthy. Analyses stay in SQLite until the analyzer pod is deleted.
+
+**Step 6 — if it looks dead**
+
+```bash
+kubectl -n nexops logs deploy/ai-analyzer --tail=80
+kubectl -n nexops describe rolebinding ai-analyzer
+```
+
+- `Forbidden` → Role is missing `pods`, `pods/log`, or `events`.
+- cannot list OPEN incidents → detector URL should be `http://incident-detector:8080`.
+- Empty analyses while OPEN exists → wait 20s, or POST `/analyze` yourself.
+- Analyses vanish after you delete the analyzer pod → SQLite lives on `emptyDir` (expected).
+
+### Stop analyzer only
+
+```bash
+kubectl -n nexops scale deploy/ai-analyzer --replicas=0
+```
+
+Bring it back: `kubectl -n nexops scale deploy/ai-analyzer --replicas=1`
+
+---
+
+## What is running now (after Stage 7)
+
+- Helm `nexops` in `nexops`: store + **incident-detector v1** + **ai-analyzer v1**.
+- Helm `nexops-loki` in `nexops-monitoring`.
+- Grafana: **http://10.245.101.134:3300** (not NodePort 2400).
+Leave payment-api healthy unless you are demonstrating a failure.

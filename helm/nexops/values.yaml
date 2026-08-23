@@ -52,6 +52,7 @@ monitoring:
   serviceMonitor:
     enabled: true
     interval: 15s
+    # Must match kube-prometheus-stack serviceMonitorSelector (release: prometheus).
     releaseLabel: prometheus
   grafana:
     dashboard:
@@ -69,6 +70,30 @@ incidentDetector:
   service:
     port: 8080
   pollSeconds: 10
+  resources:
+    requests:
+      cpu: 25m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+aiAnalyzer:
+  replicaCount: 1
+  image:
+    repository: nexops/ai-analyzer
+    tag: v1
+    pullPolicy: IfNotPresent
+  service:
+    port: 8081
+  pollSeconds: 20
+  incidentDetectorUrl: http://incident-detector:8080
+  llm:
+    url: ""
+    model: gpt-4o-mini
+    # Optional existing Secret name; never commit the key.
+    apiKeySecret: ""
+    apiKeyKey: api-key
   resources:
     requests:
       cpu: 25m

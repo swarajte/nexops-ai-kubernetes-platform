@@ -1,6 +1,6 @@
 # NexOps in simple words
 
-Read this before Stage 6. Commands to start/stop things live in [COMMANDS.md](COMMANDS.md). This file is **what the pieces are and why they exist**.
+Read this before Stage 7. Commands to start/stop things live in [COMMANDS.md](COMMANDS.md). This file is **what the pieces are and why they exist**.
 
 GitHub is the source of truth: `nexops-ai-kubernetes-platform`.
 POC folder: `/storage/swarajt/nexops-ai-kubernetes-platform`.
@@ -16,18 +16,20 @@ POC folder: `/storage/swarajt/nexops-ai-kubernetes-platform`.
 
 We build the store first so we have a **real app** that can break. Then we build the platform around it.
 
-The big picture:
+The big picture (Stages 1–7 are built):
 
 ```
 Customer uses the store
         ↓
 Something breaks (we can also break it on purpose)
         ↓
-Monitoring sees numbers and logs  (Stage 5)
+Monitoring sees numbers and logs  (Stage 5 — done)
         ↓
-Incident detector says this is an incident  (Stage 6)
+Incident detector says “this is an incident”  (Stage 6 — done)
         ↓
-Later: AI explains it, a dashboard asks you to approve, a fixer talks to Kubernetes
+AI analyzer explains it in structured JSON  (Stage 7 — done)
+        ↓
+Later: a dashboard asks you to approve, a fixer talks to Kubernetes
 ```
 
 ---
@@ -119,3 +121,19 @@ Every 10 seconds it lists pods. Problems (first match): ImagePullBackOff, OOMKil
 `GET /incidents` on port 8080. ServiceAccount may only **list** pods/events in `nexops`.
 
 Commands: [COMMANDS.md](COMMANDS.md).
+
+---
+
+## 10. Stage 7 — AI analyzer (built)
+
+A second FastAPI program in namespace `nexops`. Detector = list of problems. Analyzer = explanation.
+
+**What it does:** every 20 seconds it asks the detector for OPEN incidents. For each new one it reads the pod (memory limit, restarts, last exit reason), events, and a short log tail, then runs a **rule engine** that always returns: problem, evidence, likely_cause, suggested_fix, confidence, plus suggested_action (for Stage 9). Saves to SQLite. You can also `POST /analyze` with `{"incident_id":"..."}`.
+
+**What it does not do:** it does not change Kubernetes, does not open a shell, and does not need ChatGPT. RBAC is read-only (`get/list` on pods, pod logs, events in `nexops` only).
+
+Default brain is **rules** so this POC works behind a corporate proxy. Optional LLM: Helm `aiAnalyzer.llm.url` + a Secret (never in git). If the LLM fails, the rule answer is kept.
+
+HTTP on port **8081**: `GET /health`, `GET /analyses`, `POST /analyze`.
+
+Verify-yourself checklist: [COMMANDS.md](COMMANDS.md) Stage 7.
