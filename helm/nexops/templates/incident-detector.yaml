@@ -69,6 +69,8 @@ spec:
               value: /data/incidents.db
             - name: WATCH_ENABLED
               value: "true"
+            - name: PAYMENT_FAIL_STATUS_URL
+              value: {{ .Values.incidentDetector.paymentFailStatusUrl | quote }}
           volumeMounts:
             - name: data
               mountPath: /data

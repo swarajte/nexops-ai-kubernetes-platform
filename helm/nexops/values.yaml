@@ -65,11 +65,12 @@ incidentDetector:
   replicaCount: 1
   image:
     repository: nexops/incident-detector
-    tag: v1
+    tag: v2
     pullPolicy: IfNotPresent
   service:
     port: 8080
   pollSeconds: 10
+  paymentFailStatusUrl: http://payment-api:8000/fail/status
   resources:
     requests:
       cpu: 25m
@@ -82,7 +83,7 @@ aiAnalyzer:
   replicaCount: 1
   image:
     repository: nexops/ai-analyzer
-    tag: v1
+    tag: v2
     pullPolicy: IfNotPresent
   service:
     port: 8081

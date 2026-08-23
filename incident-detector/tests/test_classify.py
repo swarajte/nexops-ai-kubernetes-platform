@@ -83,3 +83,18 @@ def test_skip_deleting():
         containerStatuses=[{"ready": False, "state": {"waiting": {"reason": "CrashLoopBackOff"}}}],
     )
     assert classify_pod(pod) is None
+
+
+def test_crash_error_before_backoff():
+    pod = _pod(
+        containerStatuses=[
+            {
+                "ready": False,
+                "restartCount": 2,
+                "state": {"terminated": {"reason": "Error", "exitCode": 1}},
+            }
+        ]
+    )
+    found = classify_pod(pod)
+    assert found is not None
+    assert found.problem == "CrashLoopBackOff"

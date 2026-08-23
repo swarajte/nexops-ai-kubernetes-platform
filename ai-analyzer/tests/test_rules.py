@@ -14,12 +14,20 @@ def test_oomkilled():
     assert out["source"] == "rules"
 
 
-def test_notready_with_restarts_treated_as_memory():
+def test_notready_is_reset_not_memory():
     out = analyze(
         {"service": "payment-api", "problem": "NotReady", "pod": "p"},
-        {"memory_limit": "32Mi", "restart_count": 2, "events": [{"reason": "OOMKilled", "message": "Memory cgroup"}]},
+        {"memory_limit": "32Mi", "restart_count": 2},
     )
-    assert out["suggested_action"]["type"] == "increase_memory"
+    assert out["suggested_action"]["type"] == "reset_failure_mode"
+
+
+def test_high_error_rate():
+    out = analyze(
+        {"service": "payment-api", "problem": "HighErrorRate", "pod": "p"},
+        {},
+    )
+    assert out["suggested_action"]["type"] == "reset_failure_mode"
 
 
 def test_image_pull():
