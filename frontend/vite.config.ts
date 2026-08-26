@@ -11,6 +11,16 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ""),
       },
+      "/ops-api/detector": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/ops-api\/detector/, ""),
+      },
+      "/ops-api/analyzer": {
+        target: "http://localhost:8081",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/ops-api\/analyzer/, ""),
+      },
     },
   },
   test: {

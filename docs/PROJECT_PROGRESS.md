@@ -19,7 +19,7 @@ Later platform flow:
 
 ```
 Failure → Monitoring → Incident Detector → AI Analyzer
-  → NexOps Control Center (not started) → Human approval → Remediation → Health verification
+  → NexOps Control Center → Human approval → Remediation → Health verification
 ```
 
 ## Technology stack
@@ -43,7 +43,7 @@ Failure → Monitoring → Incident Detector → AI Analyzer
 | 5 | Monitoring | COMPLETED |
 | 6 | Incident Detector | COMPLETED |
 | 7 | AI Analyzer | COMPLETED |
-| 8 | NexOps Control Center | NOT STARTED |
+| 8 | NexOps Control Center | COMPLETED |
 | 9 | Remediation | NOT STARTED |
 | 10 | Kubernetes Security | NOT STARTED |
 | 11 | CI/CD | NOT STARTED |
@@ -54,8 +54,8 @@ Failure → Monitoring → Incident Detector → AI Analyzer
 | 16 | Reverse Engineering | NOT STARTED |
 
 ## Current stage
-**Stage 7 — AI Analyzer (COMPLETED)**  
-Next: Stage 8 — NexOps Control Center (not started)
+**Stage 8 — NexOps Control Center (COMPLETED)**  
+Frontend `v2` is live on POC. Same-origin detector/analyzer proxies and HighErrorRate correlation were verified. Next: Stage 9 remediation.
 
 ## Important decisions
 - GitHub repository `nexops-ai-kubernetes-platform` is the permanent source of truth.
@@ -71,12 +71,14 @@ Next: Stage 8 — NexOps Control Center (not started)
 - ServiceMonitors must have label `release: prometheus` or the existing operator ignores them.
 - Stage 6 incident-detector only watches namespace `nexops` (Role, not ClusterRole). One OPEN incident per `service:problem`. Healthy again → RESOLVED.
 - Stage 7 ai-analyzer is read-only (pods, logs, events). Default analysis is a rule engine; LLM is optional via Secret and is not required on this POC.
+- Detector + analyzer share one mapping table: OOMKilled→increase_memory, CrashLoopBackOff→restart_deployment, ImagePullBackOff→fix_image_tag, NotReady and injected Ready-pod modes→reset_failure_mode. App modes come from payment-api `/fail/status`.
+- Stage 8 is `/ops` in the existing React frontend. Nginx proxies detector/analyzer APIs, the UI joins by `incident_id`, and approval is UI-only until Stage 9.
 - Plain-language walkthrough: `docs/SIMPLE_GUIDE.md`.
 
 ## Known issues
 - Local Windows workstation does not have Git; push is from POC.
-- Images are local to the POC node (`nexops/payment-api:v3`, `nexops/orders-api:v2`, `nexops/incident-detector:v1`, `nexops/ai-analyzer:v1`).
+- Images are local to the POC node (`nexops/frontend:v2`, `nexops/payment-api:v3`, `nexops/orders-api:v2`, `nexops/incident-detector:v2`, `nexops/ai-analyzer:v2`).
 - After a failure demo, always `helm upgrade ... --reset-values` so overlays do not stick (Helm 4).
 
 ## Last updated
-2026-08-23
+2026-08-26

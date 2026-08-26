@@ -619,7 +619,62 @@ Bring it back: `kubectl -n nexops scale deploy/ai-analyzer --replicas=1`
 
 ---
 
-## What is running now (after Stage 7)
+## Stage 8 — NexOps Control Center
+
+**What:** The existing React frontend now has `/store` and `/ops`. The control center polls detector and analyzer through nginx, correlates rows by `incident_id`, and shows health, incidents, evidence, analysis, suggested action, confidence, decisions and recovery.
+
+**Safety boundary:** Approve/Reject is UI state only. It does **not** modify Kubernetes. Stage 9 adds the allowlisted remediation API.
+
+### Build and deploy
+
+```bash
+cd /storage/swarajt/nexops-ai-kubernetes-platform
+docker build -t nexops/frontend:v2 ./frontend
+docker save nexops/frontend:v2 | ctr -n k8s.io images import -
+helm upgrade nexops ./helm/nexops -n nexops --reset-values
+kubectl -n nexops rollout status deploy/frontend
+kubectl -n nexops port-forward --address 0.0.0.0 svc/frontend 3000:80
+```
+
+Windows Chrome:
+
+- Store: `http://10.245.101.134:3000/store`
+- Control Center: `http://10.245.101.134:3000/ops`
+
+### Acceptance test
+
+```bash
+# Healthy: /ops shows all three services healthy.
+
+# Pod-level failure:
+helm upgrade nexops ./helm/nexops -n nexops --reset-values \
+  -f helm/nexops/failures/oom.yaml
+# Wait 30-45s: /ops shows OOMKilled then increase_memory.
+
+# Recover and wait for OPEN to clear:
+helm upgrade nexops ./helm/nexops -n nexops --reset-values
+kubectl -n nexops rollout status deploy/payment-api
+
+# Ready-but-failing application mode:
+helm upgrade nexops ./helm/nexops -n nexops --reset-values \
+  -f helm/nexops/failures/errors.yaml
+# payment-api remains 1/1 but /ops must show HighErrorRate then reset_failure_mode.
+
+# Leave healthy:
+helm upgrade nexops ./helm/nexops -n nexops --reset-values
+```
+
+### Troubleshooting
+
+```bash
+kubectl -n nexops exec deploy/frontend -- wget -qO- http://127.0.0.1/ops-api/detector/incidents
+kubectl -n nexops exec deploy/frontend -- wget -qO- http://127.0.0.1/ops-api/analyzer/analyses
+kubectl -n nexops logs deploy/frontend --tail=80
+```
+
+---
+
+## What is running now (after Stage 8)
 
 - Helm `nexops` in `nexops`: store + **incident-detector v1** + **ai-analyzer v1**.
 - Helm `nexops-loki` in `nexops-monitoring`.

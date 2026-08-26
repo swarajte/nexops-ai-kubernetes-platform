@@ -3,10 +3,11 @@
 **NexOps — AI Kubernetes Incident Response & Self-Healing Platform**
 
 ## Current status
-Stage 7 — AI analyzer completed.
+Stage 8 — NexOps Control Center completed and verified on the POC.
 
 **How everything works in simple words:** [docs/SIMPLE_GUIDE.md](docs/SIMPLE_GUIDE.md)  
-Start/stop commands: **[docs/COMMANDS.md](docs/COMMANDS.md)**
+Start/stop commands: **[docs/COMMANDS.md](docs/COMMANDS.md)**  
+One-failure-at-a-time experiments: **[docs/FAILURE_EXPERIMENTS.md](docs/FAILURE_EXPERIMENTS.md)**
 
 ## Application flow
 ```
@@ -96,6 +97,26 @@ kubectl -n nexops exec deploy/ai-analyzer -- python -c "import urllib.request; p
 ```
 
 Verify it yourself (pod up, `/health`, OOM overlay → analysis JSON, recover): **[docs/COMMANDS.md](docs/COMMANDS.md)** Stage 7.
+
+## NexOps Control Center (Stage 8)
+
+The React frontend now serves both the monitored store and a production-style SRE dashboard:
+
+- `/store` — store application
+- `/ops` — overall health, OPEN/RESOLVED incidents, evidence, AI analysis, confidence and suggested action
+- approval/rejection is deliberately UI-only; Stage 9 adds the allowlisted remediation service
+- analyses are correlated using `incident_id`, never by assuming the newest historical analysis is current
+
+Nginx provides same-origin proxies from `/ops-api/detector/*` and `/ops-api/analyzer/*` to the in-cluster APIs.
+
+```bash
+docker build -t nexops/frontend:v2 ./frontend
+docker save nexops/frontend:v2 | ctr -n k8s.io images import -
+helm upgrade nexops ./helm/nexops -n nexops --reset-values
+kubectl -n nexops port-forward --address 0.0.0.0 svc/frontend 3000:80
+```
+
+Open `http://10.245.101.134:3000/ops`.
 
 Access the store (port-forward listens on the machine where you run kubectl):
 

@@ -108,7 +108,7 @@ We reused cluster Prometheus/Grafana in `monitoring`. We added ServiceMonitors w
 
 ## 8. How information travels
 
-OOM → Kubernetes records it → Prometheus/Loki show it → **incident detector opens OPEN** → later AI, dashboard, approve, fix.
+OOM → Kubernetes records it → Prometheus/Loki show it → **incident detector opens OPEN** → **AI analyzer explains** → **/ops Control Center shows it to a human**. Approve does not change Kubernetes yet.
 
 Stage 6 does **not** fix or call AI.
 
@@ -137,3 +137,17 @@ Default brain is **rules** so this POC works behind a corporate proxy. Optional 
 HTTP on port **8081**: `GET /health`, `GET /analyses`, `POST /analyze`.
 
 Verify-yourself checklist: [COMMANDS.md](COMMANDS.md) Stage 7.
+
+
+---
+
+## 11. Stage 8 — NexOps Control Center (built)
+
+The same frontend now has two pages:
+
+- `/store` — the shop being watched
+- `/ops` — health cards, OPEN/RESOLVED incidents, detector evidence, AI analysis joined by `incident_id`, suggested action, confidence, Approve/Reject
+
+Approve/Reject is **UI only**. Stage 9 will apply allowlisted remediations. Nginx proxies `/ops-api/detector/*` and `/ops-api/analyzer/*` so the browser never talks to 8080/8081 directly.
+
+Open: `http://10.245.101.134:3000/ops`. Commands: [COMMANDS.md](COMMANDS.md) Stage 8. Failure runbook: [FAILURE_EXPERIMENTS.md](FAILURE_EXPERIMENTS.md).
