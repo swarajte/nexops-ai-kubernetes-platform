@@ -718,6 +718,16 @@ Store pods must not mount a serviceaccount token. Analyzer Role is get/list only
 
 ---
 
+## Stage 11 — CI with clean Docker images (planned, not started)
+
+GitHub Actions will run existing tests and `docker build` on GitHub-hosted runners with no proxy args. No ECR, no Helm, no POC deploy. There are no commands to run here yet.
+
+## Stage 12 — AWS + ECR + EKS + Helm (planned, not started)
+
+IAC + CD: AWS infrastructure, push Stage 11 images to ECR, Helm deploy onto EKS. There are no commands to run here yet.
+
+---
+
 ## What is running now (after Stage 10)
 
 - Helm `nexops` chart `0.7.0`: frontend `v3`, incident-detector `v2`, ai-analyzer `v2`, remediation `v1`, tokenless store ServiceAccounts.

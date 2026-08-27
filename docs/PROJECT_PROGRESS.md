@@ -46,18 +46,18 @@ Failure → Monitoring → Incident Detector → AI Analyzer
 | 8 | NexOps Control Center | COMPLETED |
 | 9 | Remediation | COMPLETED |
 | 10 | Kubernetes Security | COMPLETED |
-| 11 | CI/CD | NOT STARTED |
-| 12 | Infrastructure (Terraform) | NOT STARTED |
-| 13 | AWS / EKS | NOT STARTED |
-| 14 | Production Improvements | NOT STARTED |
-| 15 | Final Demo | NOT STARTED |
-| 16 | Reverse Engineering | NOT STARTED |
+| 11 | CI (clean Docker images) | NOT STARTED |
+| 12 | AWS + ECR + EKS + Helm (IAC + CD) | NOT STARTED |
+| 13 | Production Improvements | NOT STARTED |
+| 14 | Final Demo | NOT STARTED |
+| 15 | Reverse Engineering | NOT STARTED |
 
 ## Current stage
 **Stage 10 — Kubernetes security (COMPLETED)**
 Chart `0.7.0`: store pods use tokenless ServiceAccounts; detector is read-only;
 analyzer is read-only; remediation may get/patch only `deployment/payment-api`.
-Python workloads run as uid 10001 with dropped capabilities. Next: Stage 11 CI/CD.
+Python workloads run as uid 10001 with dropped capabilities.
+Next (planned, not started): Stage 11 CI, then Stage 12 AWS + ECR + EKS + Helm.
 
 ## Important decisions
 - GitHub repository `nexops-ai-kubernetes-platform` is the permanent source of truth.
@@ -77,10 +77,12 @@ Python workloads run as uid 10001 with dropped capabilities. Next: Stage 11 CI/C
 - Stage 8 is `/ops` in the existing React frontend. Nginx proxies platform APIs and the UI joins by `incident_id`.
 - Stage 9 persists decisions and applies only four server-side allowlisted actions to `payment-api`; success requires rollout, app health, and detector resolution.
 - Stage 10 gives every workload its own ServiceAccount. Store pods do not mount an API token. Analyzer/detector Roles are get/list (watch on detector). Remediation Role is get/patch on `deployment/payment-api` only.
+- Stage 11 is **CI only**: GitHub Actions runs existing tests and `docker build` on GitHub-hosted runners with **no proxy args**, producing clean production images. No ECR push, no Helm deploy, no change to POC pods.
+- Stage 12 is **IAC + CD**: Terraform (or equivalent) for AWS (VPC, EKS, ECR), push those images to ECR, and Helm-deploy NexOps onto EKS so it runs outside the corporate POC. Old “standalone EKS stage” is part of Stage 12.
 
 ## Known issues
 - Local Windows workstation does not have Git; push is from POC.
-- Images are local to the POC node (`nexops/frontend:v3`, `nexops/remediation:v1`, `nexops/payment-api:v3`, `nexops/orders-api:v2`, `nexops/incident-detector:v2`, `nexops/ai-analyzer:v2`).
+- Images are local to the POC node (`nexops/frontend:v3`, `nexops/remediation:v1`, `nexops/payment-api:v3`, `nexops/orders-api:v2`, `nexops/incident-detector:v2`, `nexops/ai-analyzer:v2`). Stage 11 CI builds do not replace those POC images. Stage 12 is when EKS pulls from ECR.
 - After manual failure tests use `--reset-values`; after a Stage 9 direct patch use `--reset-values --force-conflicts` so Helm 4 reclaims changed fields.
 - The POC has a pre-existing operator ClusterRoleBinding (`postgres-operator-prerequisities-due-to-ocp-limitations`) that still grants **all** service accounts Deployment create/delete/patch. Kubernetes RBAC is additive, so NexOps Roles cannot hide that. Stage 10 removes the **token** from store pods so they cannot use it, and keeps analyzer/detector/remediation on least-privilege Roles. Do not delete that ClusterRoleBinding on this shared cluster. A clean EKS cluster will not have it.
 

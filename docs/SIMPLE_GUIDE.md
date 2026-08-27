@@ -163,3 +163,11 @@ A third FastAPI program in namespace `nexops` on port **8082**. `/ops` Approve/R
 ## 13. Stage 10 — Kubernetes security (built)
 
 Every workload has its own ServiceAccount. Shop pods (`frontend`, `orders-api`, `payment-api`) do **not** mount an API token. Detector may get/list/watch pods and events. Analyzer may get/list pods, logs, and events. Remediation may get/patch **only** `deployment/payment-api`. Python containers run as uid 10001 with capabilities dropped.
+
+---
+
+## Planned — Stage 11 CI, then Stage 12 AWS (not built)
+
+**Stage 11 — CI with clean Docker images:** every GitHub push runs tests and builds images on GitHub’s machines. No proxy args. `docker build` creates images only; it does not start NexOps and does not change POC pods.
+
+**Stage 12 — AWS + ECR + EKS + Helm:** take those images, push to ECR, create AWS infrastructure, and Helm-install NexOps on EKS (first run outside the corporate environment).

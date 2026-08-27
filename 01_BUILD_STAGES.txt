@@ -262,36 +262,36 @@ The remediation service should only have the permissions it needs.
 The AI Analyzer should not have unrestricted Kubernetes access.
 
 
-STAGE 11 — CI/CD
+STAGE 11 — CI with clean Docker images
 
 Use GitHub Actions.
 
-Pipeline should eventually include:
+This stage is CI only. No ECR, no Helm deploy, no POC pod updates.
 
 Git push
   ↓
 Tests
   ↓
-Code quality checks
-  ↓
-Security scan
-  ↓
-Docker build
-  ↓
-Container scan
-  ↓
-Push image to ECR
-  ↓
-Deploy
+Docker build (GitHub-hosted runners, no corporate proxy args)
+
+docker build produces images only. It does not start long-running containers
+and does not change the POC cluster.
+
+Code quality / security / container scans can be added later if useful.
+Do not push images and do not deploy in this stage.
 
 
-STAGE 12 — Infrastructure
+STAGE 12 — AWS + ECR + EKS + Helm (IAC + CD)
 
-Use Terraform.
+Take the clean Stage 11 images and run NexOps outside the corporate POC.
 
-Create AWS infrastructure required by the final project.
+Use Terraform (or equivalent) for AWS infrastructure, then complete CD:
 
-Eventually:
+GitHub Actions
+  ↓
+Push images to ECR
+  ↓
+Helm deploy to EKS
 
 AWS
 ├── VPC
@@ -302,15 +302,11 @@ AWS
 ├── IAM
 └── required supporting resources
 
-
-STAGE 13 — AWS / EKS
-
-Move the working system from local Kubernetes to AWS EKS.
-
 The final system should run independently of the corporate network.
+Former standalone “AWS / EKS” work belongs in this stage.
 
 
-STAGE 14 — Production Improvements
+STAGE 13 — Production Improvements
 
 Add where useful:
 - better error handling
@@ -326,7 +322,7 @@ Add where useful:
 - cost awareness
 
 
-STAGE 15 — Final Demo
+STAGE 14 — Final Demo
 
 Create a simple demo flow:
 
@@ -344,7 +340,7 @@ Create a simple demo flow:
 12. Show incident becoming RESOLVED.
 
 
-STAGE 16 — Reverse Engineering
+STAGE 15 — Reverse Engineering
 
 After the project works, stop adding features temporarily.
 
