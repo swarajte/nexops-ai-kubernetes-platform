@@ -674,9 +674,53 @@ kubectl -n nexops logs deploy/frontend --tail=80
 
 ---
 
-## What is running now (after Stage 8)
+## Stage 9 — Allowlisted remediation
 
-- Helm `nexops` in `nexops`: store + **incident-detector v1** + **ai-analyzer v1**.
+**What:** `/ops` now persists Approve/Reject decisions through the remediation service. Approved actions are revalidated against the current OPEN incident and matching analysis before any Kubernetes write.
+
+Allowlisted actions: `increase_memory`, `restart_deployment`, `fix_image_tag`, and `reset_failure_mode`. The only target is `payment-api`; memory is capped at 512Mi. Unknown actions, targets, resolved incidents, and stale analyses fail closed. Recovery succeeds only after the Deployment is ready, `/fail/status` is healthy, and the detector marks the incident RESOLVED.
+
+```bash
+docker build -t nexops/remediation:v1 ./remediation
+docker build -t nexops/frontend:v3 ./frontend
+docker save nexops/remediation:v1 nexops/frontend:v3 | ctr -n k8s.io images import -
+helm upgrade nexops ./helm/nexops -n nexops --reset-values
+
+kubectl -n nexops rollout status deploy/remediation
+kubectl -n nexops exec deploy/frontend -- wget -qO- http://127.0.0.1/ops-api/remediation/health
+kubectl -n nexops exec deploy/frontend -- wget -qO- http://127.0.0.1/ops-api/remediation/remediations
+```
+
+Acceptance verified on 2026-08-27: `HighErrorRate → reset_failure_mode`, decision `approved`, status `succeeded`, incident `RESOLVED`, and `failure_mode_env=none`.
+
+Important: direct remediation fixes the workload but does not rewrite Helm's stored failure-overlay values. Helm 4 server-side apply also sees the direct patch as another field owner. After a remediation demo, reconcile with:
+
+```bash
+helm upgrade nexops ./helm/nexops -n nexops --reset-values --force-conflicts
+```
+
+Security note: this chart creates a Role limited to get/patch `deployment/payment-api`. The POC also has a pre-existing operator ClusterRoleBinding that grants all service accounts broader Deployment rights. RBAC is additive, so the chart Role cannot hide that extra access. Stage 10 turns off API tokens on store pods and keeps NexOps Roles least-privilege. Do not delete the operator ClusterRoleBinding on this shared POC.
+
+---
+
+## Stage 10 — Kubernetes security
+
+**What:** Dedicated ServiceAccounts, namespace Roles, and pod security for every NexOps workload. Analyzer stays read-only. Remediation stays named `payment-api` get/patch only.
+
+```bash
+cd /storage/swarajt/nexops-ai-kubernetes-platform
+helm upgrade nexops ./helm/nexops -n nexops --reset-values --force-conflicts
+kubectl -n nexops get role,rolebinding,sa
+kubectl -n nexops exec deploy/payment-api -- ls /var/run/secrets/kubernetes.io/serviceaccount 2>&1 || true
+```
+
+Store pods must not mount a serviceaccount token. Analyzer Role is get/list only. Remediation Role is get/patch on deployment/payment-api. Frontend nginx still runs as root on port 80; Python apps are uid 10001.
+
+---
+
+## What is running now (after Stage 10)
+
+- Helm `nexops` chart `0.7.0`: frontend `v3`, incident-detector `v2`, ai-analyzer `v2`, remediation `v1`, tokenless store ServiceAccounts.
 - Helm `nexops-loki` in `nexops-monitoring`.
 - Grafana: **http://10.245.101.134:3300** (not NodePort 2400).
 Leave payment-api healthy unless you are demonstrating a failure.

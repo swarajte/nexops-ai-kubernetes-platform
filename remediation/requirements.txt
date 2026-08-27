@@ -1,0 +1,3 @@
+fastapi>=0.115,<1
+kubernetes>=31,<35
+uvicorn[standard]>=0.34,<1

@@ -148,6 +148,18 @@ The same frontend now has two pages:
 - `/store` — the shop being watched
 - `/ops` — health cards, OPEN/RESOLVED incidents, detector evidence, AI analysis joined by `incident_id`, suggested action, confidence, Approve/Reject
 
-Approve/Reject is **UI only**. Stage 9 will apply allowlisted remediations. Nginx proxies `/ops-api/detector/*` and `/ops-api/analyzer/*` so the browser never talks to 8080/8081 directly.
+Approve/Reject now calls the remediation service. Stage 9 applies only four allowlisted patches to `payment-api`. Nginx proxies `/ops-api/detector/*` and `/ops-api/analyzer/*` so the browser never talks to 8080/8081 directly.
 
 Open: `http://10.245.101.134:3000/ops`. Commands: [COMMANDS.md](COMMANDS.md) Stage 8. Failure runbook: [FAILURE_EXPERIMENTS.md](FAILURE_EXPERIMENTS.md).
+
+---
+
+## 12. Stage 9 — Remediation (built)
+
+A third FastAPI program in namespace `nexops` on port **8082**. `/ops` Approve/Reject is no longer UI-only: the frontend posts a decision, the service re-checks the live OPEN incident and matching analysis, then applies **one** allowlisted change to `payment-api` only (`increase_memory`, `restart_deployment`, `fix_image_tag`, `reset_failure_mode`). Every patch also sets `FAILURE_MODE=none`. Success means rollout, app health, and detector RESOLVED.
+
+---
+
+## 13. Stage 10 — Kubernetes security (built)
+
+Every workload has its own ServiceAccount. Shop pods (`frontend`, `orders-api`, `payment-api`) do **not** mount an API token. Detector may get/list/watch pods and events. Analyzer may get/list pods, logs, and events. Remediation may get/patch **only** `deployment/payment-api`. Python containers run as uid 10001 with capabilities dropped.

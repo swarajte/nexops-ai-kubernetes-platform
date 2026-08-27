@@ -1,4 +1,9 @@
-import type { Analysis, Incident } from "../types/platform";
+import type {
+  Analysis,
+  Incident,
+  Remediation,
+  SubmitDecisionBody,
+} from "../types/platform";
 
 async function readJson<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, {
@@ -29,5 +34,19 @@ export function requestAnalysis(incidentId: string): Promise<Analysis> {
   return readJson<Analysis>("/ops-api/analyzer/analyze", {
     method: "POST",
     body: JSON.stringify({ incident_id: incidentId }),
+  });
+}
+
+export async function listRemediations(): Promise<Remediation[]> {
+  const body = await readJson<{ remediations: Remediation[] }>(
+    "/ops-api/remediation/remediations",
+  );
+  return body.remediations;
+}
+
+export function submitDecision(body: SubmitDecisionBody): Promise<Remediation> {
+  return readJson<Remediation>("/ops-api/remediation/decisions", {
+    method: "POST",
+    body: JSON.stringify(body),
   });
 }

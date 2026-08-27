@@ -2,7 +2,7 @@ frontend:
   replicaCount: 1
   image:
     repository: nexops/frontend
-    tag: v2
+    tag: v3
     pullPolicy: IfNotPresent
   service:
     port: 80
@@ -95,6 +95,31 @@ aiAnalyzer:
     # Optional existing Secret name; never commit the key.
     apiKeySecret: ""
     apiKeyKey: api-key
+  resources:
+    requests:
+      cpu: 25m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+
+remediation:
+  replicaCount: 1
+  image:
+    repository: nexops/remediation
+    tag: v1
+    pullPolicy: IfNotPresent
+  service:
+    port: 8082
+  incidentDetectorUrl: http://incident-detector:8080
+  aiAnalyzerUrl: http://ai-analyzer:8081
+  paymentApiUrl: http://payment-api:8000
+  knownGoodImage: nexops/payment-api:v3
+  allowedTargets: payment-api
+  maxMemoryMi: 512
+  verifyTimeoutSeconds: 120
+  verifyPollSeconds: 5
   resources:
     requests:
       cpu: 25m

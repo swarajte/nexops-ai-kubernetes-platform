@@ -21,6 +21,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/ops-api\/analyzer/, ""),
       },
+      "/ops-api/remediation": {
+        target: "http://localhost:8082",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/ops-api\/remediation/, ""),
+      },
     },
   },
   test: {

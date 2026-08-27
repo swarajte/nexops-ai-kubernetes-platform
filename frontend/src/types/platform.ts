@@ -39,3 +39,34 @@ export type Analysis = {
 };
 
 export type Decision = "approved" | "rejected";
+
+export type RemediationStatus =
+  | "rejected"
+  | "queued"
+  | "validating"
+  | "applying"
+  | "verifying"
+  | "succeeded"
+  | "failed";
+
+export type Remediation = {
+  id: string;
+  incident_id: string;
+  analysis_id: string;
+  decision: Decision;
+  status: RemediationStatus;
+  suggested_action: SuggestedAction;
+  applied?: Record<string, unknown> | null;
+  steps: Array<{ at: string; step: string; detail: string }>;
+  message: string;
+  error?: string | null;
+  created_at: string;
+  updated_at: string;
+  completed_at?: string | null;
+};
+
+export type SubmitDecisionBody = {
+  incident_id: string;
+  analysis_id: string;
+  decision: Decision;
+};

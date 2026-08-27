@@ -47,3 +47,6 @@ docker-compose.override.yml
 # Corporate / local-only build helpers (proxy scripts stay off Git)
 **/build-*-with-proxy.sh
 /tmp/
+
+# Local SQLite test files
+*.db

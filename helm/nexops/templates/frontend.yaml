@@ -17,6 +17,8 @@ spec:
         app.kubernetes.io/name: nexops
         app.kubernetes.io/component: frontend
     spec:
+      serviceAccountName: frontend
+      automountServiceAccountToken: false
       containers:
         - name: frontend
           image: "{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}"

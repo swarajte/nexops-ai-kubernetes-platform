@@ -26,6 +26,9 @@ spec:
         app.kubernetes.io/name: nexops
         app.kubernetes.io/component: orders-api
     spec:
+      serviceAccountName: orders-api
+      automountServiceAccountToken: false
+      {{- include "nexops.podSecurityNonRoot" . | nindent 6 }}
       containers:
         - name: orders-api
           image: "{{ .Values.ordersApi.image.repository }}:{{ .Values.ordersApi.image.tag }}"
@@ -53,3 +56,4 @@ spec:
             periodSeconds: 20
           resources:
             {{- toYaml .Values.ordersApi.resources | nindent 12 }}
+          {{- include "nexops.containerSecurity" . | nindent 10 }}

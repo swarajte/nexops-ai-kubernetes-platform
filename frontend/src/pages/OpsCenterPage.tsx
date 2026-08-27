@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { listAnalyses, listIncidents, requestAnalysis } from "../api/platform";
-import type { Analysis, Decision, Incident } from "../types/platform";
+import {
+  listAnalyses,
+  listIncidents,
+  listRemediations,
+  requestAnalysis,
+  submitDecision,
+} from "../api/platform";
+import type { Analysis, Decision, Incident, Remediation } from "../types/platform";
 
 const SERVICES = ["frontend", "orders-api", "payment-api"];
 const POLL_MS = 10_000;
@@ -20,8 +26,10 @@ function actionLabel(analysis?: Analysis) {
 export default function OpsCenterPage() {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
+  const [remediations, setRemediations] = useState<Remediation[]>([]);
   const [selectedId, setSelectedId] = useState<string>();
-  const [decisions, setDecisions] = useState<Record<string, Decision>>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [decisionError, setDecisionError] = useState<string>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>();
   const [lastUpdated, setLastUpdated] = useState<Date>();
@@ -29,12 +37,14 @@ export default function OpsCenterPage() {
 
   const refresh = useCallback(async () => {
     try {
-      const [nextIncidents, nextAnalyses] = await Promise.all([
+      const [nextIncidents, nextAnalyses, nextRemediations] = await Promise.all([
         listIncidents(),
         listAnalyses(),
+        listRemediations(),
       ]);
       setIncidents(nextIncidents);
       setAnalyses(nextAnalyses);
+      setRemediations(nextRemediations);
       setSelectedId((current) => {
         if (current && nextIncidents.some((incident) => incident.id === current)) {
           return current;
@@ -90,11 +100,36 @@ export default function OpsCenterPage() {
           && analysis.incident_problem === selected.problem,
       ) ?? analyses.find((analysis) => analysis.incident_id === selected.id)
     : undefined;
-  const decision = selected ? decisions[selected.id] : undefined;
+  const selectedRemediation = selected
+    ? remediations.find((record) => record.incident_id === selected.id)
+    : undefined;
+  const decision = selectedRemediation?.decision;
+  const remediationActive = selectedRemediation
+    ? ["queued", "validating", "applying", "verifying"].includes(selectedRemediation.status)
+    : false;
 
-  function decide(value: Decision) {
-    if (!selected || selected.status !== "OPEN") return;
-    setDecisions((current) => ({ ...current, [selected.id]: value }));
+  useEffect(() => {
+    if (!remediationActive) return;
+    const timer = window.setInterval(() => void refresh(), 3_000);
+    return () => window.clearInterval(timer);
+  }, [refresh, remediationActive]);
+
+  async function decide(value: Decision) {
+    if (!selected || !selectedAnalysis || selected.status !== "OPEN"
+      || selectedAnalysis.incident_id !== selected.id || selectedRemediation) return;
+    setSubmitting(true);
+    setDecisionError(undefined);
+    try {
+      const record = await submitDecision({ incident_id: selected.id,
+        analysis_id: selectedAnalysis.id, decision: value });
+      setRemediations((current) => [record,
+        ...current.filter((item) => item.incident_id !== selected.id)]);
+      if (value === "approved") window.setTimeout(() => void refresh(), 1_500);
+    } catch (reason) {
+      setDecisionError(reason instanceof Error ? reason.message : "Decision failed");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -196,7 +231,10 @@ export default function OpsCenterPage() {
                     className={`incident-row ${incident.id === selectedId ? "selected" : ""}`}
                     key={incident.id}
                     type="button"
-                    onClick={() => setSelectedId(incident.id)}
+                    onClick={() => {
+                      setSelectedId(incident.id);
+                      setDecisionError(undefined);
+                    }}
                   >
                     <span className={`severity-marker ${incident.status.toLowerCase()}`} />
                     <span className="incident-row-main">
@@ -300,41 +338,52 @@ export default function OpsCenterPage() {
                   <div>
                     <span>Human decision</span>
                     <strong>
-                      {selected.status === "RESOLVED"
-                        ? "Recovery verified"
-                        : decision === "approved"
-                          ? "Approved — awaiting Stage 9 remediation service"
-                          : decision === "rejected"
-                            ? "Recommendation rejected"
-                            : "Review the recommendation before deciding"}
+                      {selected.status === "RESOLVED" ? "Recovery verified"
+                        : selectedRemediation?.status === "rejected" ? "Recommendation rejected"
+                        : selectedRemediation?.status === "failed" ? "Remediation failed"
+                        : selectedRemediation?.status === "succeeded" ? "Fix applied — awaiting detector"
+                        : selectedRemediation?.status === "verifying" ? "Verifying recovery"
+                        : selectedRemediation?.status === "applying" ? "Applying allowlisted fix"
+                        : selectedRemediation ? "Approved — queued for remediation"
+                        : "Review the recommendation before deciding"}
                     </strong>
                   </div>
                   <div className="approval-actions">
                     <button
                       className="reject-button"
                       type="button"
-                      disabled={!selectedAnalysis || selected.status === "RESOLVED"}
-                      onClick={() => decide("rejected")}
+                      disabled={!selectedAnalysis || selected.status === "RESOLVED" || submitting || Boolean(selectedRemediation)}
+                      onClick={() => void decide("rejected")}
                     >
-                      Reject
+                      {submitting ? "Saving…" : "Reject"}
                     </button>
                     <button
                       className="approve-button"
                       type="button"
-                      disabled={!selectedAnalysis || selected.status === "RESOLVED"}
-                      onClick={() => decide("approved")}
+                      disabled={!selectedAnalysis || selected.status === "RESOLVED" || submitting || Boolean(selectedRemediation)}
+                      onClick={() => void decide("approved")}
                     >
-                      Approve recommendation
+                      {submitting ? "Saving…" : "Approve recommendation"}
                     </button>
                   </div>
                 </section>
+
+                {(decisionError || selectedRemediation?.error) && (
+                  <div className="remediation-error" role="alert">
+                    {decisionError || selectedRemediation?.error}
+                  </div>
+                )}
 
                 <div className="remediation-track">
                   <span className="complete">Detected</span>
                   <span className={selectedAnalysis ? "complete" : "current"}>Analyzed</span>
                   <span className={decision ? "complete" : "pending"}>Decision</span>
-                  <span className="pending">Remediation · Stage 9</span>
-                  <span className={selected.status === "RESOLVED" ? "complete" : "pending"}>
+                  <span className={selectedRemediation?.status === "failed" ? "failed"
+                    : selectedRemediation?.status === "succeeded" || selected.status === "RESOLVED"
+                      || selectedRemediation?.status === "rejected" ? "complete"
+                    : remediationActive ? "current" : "pending"}>Remediation</span>
+                  <span className={selected.status === "RESOLVED" ? "complete"
+                    : selectedRemediation?.status === "succeeded" ? "current" : "pending"}>
                     Recovery
                   </span>
                 </div>

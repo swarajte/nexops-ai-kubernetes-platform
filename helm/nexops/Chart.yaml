@@ -1,6 +1,6 @@
 apiVersion: v2
 name: nexops
-description: NexOps Store plus incident detector and AI analyzer
+description: NexOps Store with allowlisted remediation and least-privilege RBAC
 type: application
-version: 0.5.0
-appVersion: "1.4.0"
+version: 0.7.0
+appVersion: "1.6.0"

@@ -3,7 +3,7 @@
 **NexOps — AI Kubernetes Incident Response & Self-Healing Platform**
 
 ## Current status
-Stage 8 — NexOps Control Center completed and verified on the POC.
+Stage 10 — Kubernetes least-privilege RBAC completed and verified on the POC.
 
 **How everything works in simple words:** [docs/SIMPLE_GUIDE.md](docs/SIMPLE_GUIDE.md)  
 Start/stop commands: **[docs/COMMANDS.md](docs/COMMANDS.md)**  
@@ -104,19 +104,37 @@ The React frontend now serves both the monitored store and a production-style SR
 
 - `/store` — store application
 - `/ops` — overall health, OPEN/RESOLVED incidents, evidence, AI analysis, confidence and suggested action
-- approval/rejection is deliberately UI-only; Stage 9 adds the allowlisted remediation service
+- approval/rejection is persisted and approved actions run through the Stage 9 allowlist
 - analyses are correlated using `incident_id`, never by assuming the newest historical analysis is current
 
-Nginx provides same-origin proxies from `/ops-api/detector/*` and `/ops-api/analyzer/*` to the in-cluster APIs.
+Nginx provides same-origin proxies for detector, analyzer, and remediation APIs.
 
 ```bash
-docker build -t nexops/frontend:v2 ./frontend
-docker save nexops/frontend:v2 | ctr -n k8s.io images import -
+docker build -t nexops/frontend:v3 ./frontend
+docker save nexops/frontend:v3 | ctr -n k8s.io images import -
 helm upgrade nexops ./helm/nexops -n nexops --reset-values
 kubectl -n nexops port-forward --address 0.0.0.0 svc/frontend 3000:80
 ```
 
 Open `http://10.245.101.134:3000/ops`.
+
+## Allowlisted remediation (Stage 9)
+
+The `remediation/` service persists Approve/Reject decisions, revalidates the live incident and matching analysis, then patches only an allowlisted target. Supported actions are `increase_memory`, `restart_deployment`, `fix_image_tag`, and `reset_failure_mode`. Unknown targets/actions and stale analyses are rejected. The UI polls `queued → validating → applying → verifying → succeeded/failed`.
+
+Stage 9 was accepted on the POC with a `HighErrorRate` incident: `reset_failure_mode` was approved, the `payment-api` Deployment was patched, the detector resolved the incident, and `/fail/status` returned healthy.
+The OOM path was also verified: `increase_memory` applied 32Mi→64Mi while clearing the infinite OOM injector, then the incident resolved. Reconcile Helm 4 after direct remediation with `--reset-values --force-conflicts`.
+
+## Kubernetes security (Stage 10)
+
+Every NexOps pod has its own ServiceAccount.
+
+- `frontend`, `orders-api`, `payment-api` do **not** mount an API token
+- `incident-detector` may `get/list/watch` pods and events in `nexops` only
+- `ai-analyzer` may `get/list` pods, pod logs, and events (no patch/delete)
+- `remediation` may `get/patch` **only** `deployment/payment-api`
+- Python containers run as uid `10001` with `allowPrivilegeEscalation: false` and all capabilities dropped
+
 
 Access the store (port-forward listens on the machine where you run kubectl):
 

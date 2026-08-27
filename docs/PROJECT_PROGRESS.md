@@ -44,8 +44,8 @@ Failure → Monitoring → Incident Detector → AI Analyzer
 | 6 | Incident Detector | COMPLETED |
 | 7 | AI Analyzer | COMPLETED |
 | 8 | NexOps Control Center | COMPLETED |
-| 9 | Remediation | NOT STARTED |
-| 10 | Kubernetes Security | NOT STARTED |
+| 9 | Remediation | COMPLETED |
+| 10 | Kubernetes Security | COMPLETED |
 | 11 | CI/CD | NOT STARTED |
 | 12 | Infrastructure (Terraform) | NOT STARTED |
 | 13 | AWS / EKS | NOT STARTED |
@@ -54,8 +54,10 @@ Failure → Monitoring → Incident Detector → AI Analyzer
 | 16 | Reverse Engineering | NOT STARTED |
 
 ## Current stage
-**Stage 8 — NexOps Control Center (COMPLETED)**  
-Frontend `v2` is live on POC. Same-origin detector/analyzer proxies and HighErrorRate correlation were verified. Next: Stage 9 remediation.
+**Stage 10 — Kubernetes security (COMPLETED)**
+Chart `0.7.0`: store pods use tokenless ServiceAccounts; detector is read-only;
+analyzer is read-only; remediation may get/patch only `deployment/payment-api`.
+Python workloads run as uid 10001 with dropped capabilities. Next: Stage 11 CI/CD.
 
 ## Important decisions
 - GitHub repository `nexops-ai-kubernetes-platform` is the permanent source of truth.
@@ -72,13 +74,15 @@ Frontend `v2` is live on POC. Same-origin detector/analyzer proxies and HighErro
 - Stage 6 incident-detector only watches namespace `nexops` (Role, not ClusterRole). One OPEN incident per `service:problem`. Healthy again → RESOLVED.
 - Stage 7 ai-analyzer is read-only (pods, logs, events). Default analysis is a rule engine; LLM is optional via Secret and is not required on this POC.
 - Detector + analyzer share one mapping table: OOMKilled→increase_memory, CrashLoopBackOff→restart_deployment, ImagePullBackOff→fix_image_tag, NotReady and injected Ready-pod modes→reset_failure_mode. App modes come from payment-api `/fail/status`.
-- Stage 8 is `/ops` in the existing React frontend. Nginx proxies detector/analyzer APIs, the UI joins by `incident_id`, and approval is UI-only until Stage 9.
-- Plain-language walkthrough: `docs/SIMPLE_GUIDE.md`.
+- Stage 8 is `/ops` in the existing React frontend. Nginx proxies platform APIs and the UI joins by `incident_id`.
+- Stage 9 persists decisions and applies only four server-side allowlisted actions to `payment-api`; success requires rollout, app health, and detector resolution.
+- Stage 10 gives every workload its own ServiceAccount. Store pods do not mount an API token. Analyzer/detector Roles are get/list (watch on detector). Remediation Role is get/patch on `deployment/payment-api` only.
 
 ## Known issues
 - Local Windows workstation does not have Git; push is from POC.
-- Images are local to the POC node (`nexops/frontend:v2`, `nexops/payment-api:v3`, `nexops/orders-api:v2`, `nexops/incident-detector:v2`, `nexops/ai-analyzer:v2`).
-- After a failure demo, always `helm upgrade ... --reset-values` so overlays do not stick (Helm 4).
+- Images are local to the POC node (`nexops/frontend:v3`, `nexops/remediation:v1`, `nexops/payment-api:v3`, `nexops/orders-api:v2`, `nexops/incident-detector:v2`, `nexops/ai-analyzer:v2`).
+- After manual failure tests use `--reset-values`; after a Stage 9 direct patch use `--reset-values --force-conflicts` so Helm 4 reclaims changed fields.
+- The POC has a pre-existing operator ClusterRoleBinding (`postgres-operator-prerequisities-due-to-ocp-limitations`) that still grants **all** service accounts Deployment create/delete/patch. Kubernetes RBAC is additive, so NexOps Roles cannot hide that. Stage 10 removes the **token** from store pods so they cannot use it, and keeps analyzer/detector/remediation on least-privilege Roles. Do not delete that ClusterRoleBinding on this shared cluster. A clean EKS cluster will not have it.
 
 ## Last updated
-2026-08-26
+2026-08-27
