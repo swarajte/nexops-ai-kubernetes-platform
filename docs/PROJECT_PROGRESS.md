@@ -46,7 +46,7 @@ Failure → Monitoring → Incident Detector → AI Analyzer
 | 8 | NexOps Control Center | COMPLETED |
 | 9 | Remediation | COMPLETED |
 | 10 | Kubernetes Security | COMPLETED |
-| 11 | CI (clean Docker images) | NOT STARTED |
+| 11 | CI (clean Docker images) | IN PROGRESS |
 | 12 | AWS + ECR + EKS + Helm (IAC + CD) | NOT STARTED |
 | 13 | Production Improvements | NOT STARTED |
 | 14 | Final Demo | NOT STARTED |
@@ -57,7 +57,7 @@ Failure → Monitoring → Incident Detector → AI Analyzer
 Chart `0.7.0`: store pods use tokenless ServiceAccounts; detector is read-only;
 analyzer is read-only; remediation may get/patch only `deployment/payment-api`.
 Python workloads run as uid 10001 with dropped capabilities.
-Next (planned, not started): Stage 11 CI, then Stage 12 AWS + ECR + EKS + Helm.
+Next: finish Stage 11 by confirming the GitHub Actions run is green, then Stage 12 AWS + ECR + EKS + Helm.
 
 ## Important decisions
 - GitHub repository `nexops-ai-kubernetes-platform` is the permanent source of truth.
@@ -87,4 +87,4 @@ Next (planned, not started): Stage 11 CI, then Stage 12 AWS + ECR + EKS + Helm.
 - The POC has a pre-existing operator ClusterRoleBinding (`postgres-operator-prerequisities-due-to-ocp-limitations`) that still grants **all** service accounts Deployment create/delete/patch. Kubernetes RBAC is additive, so NexOps Roles cannot hide that. Stage 10 removes the **token** from store pods so they cannot use it, and keeps analyzer/detector/remediation on least-privilege Roles. Do not delete that ClusterRoleBinding on this shared cluster. A clean EKS cluster will not have it.
 
 ## Last updated
-2026-08-27
+2026-09-26

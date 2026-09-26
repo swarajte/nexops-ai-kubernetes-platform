@@ -166,8 +166,8 @@ Every workload has its own ServiceAccount. Shop pods (`frontend`, `orders-api`, 
 
 ---
 
-## Planned — Stage 11 CI, then Stage 12 AWS (not built)
+## Stage 11 CI, then Stage 12 AWS
 
-**Stage 11 — CI with clean Docker images:** every GitHub push runs tests and builds images on GitHub’s machines. No proxy args. `docker build` creates images only; it does not start NexOps and does not change POC pods.
+**Stage 11 — CI with clean Docker images:** `.github/workflows/ci.yml` runs on every push to `main`. GitHub’s machines run tests and `docker build` with no proxy args. The images are thrown away when the job ends. Nothing is pushed to a registry and POC pods are not changed.
 
-**Stage 12 — AWS + ECR + EKS + Helm:** take those images, push to ECR, create AWS infrastructure, and Helm-install NexOps on EKS (first run outside the corporate environment).
+**Stage 12 — AWS + ECR + EKS + Helm (not built):** take those images, push to ECR, create AWS infrastructure, and Helm-install NexOps on EKS (first run outside the corporate environment).

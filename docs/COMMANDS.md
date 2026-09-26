@@ -718,9 +718,20 @@ Store pods must not mount a serviceaccount token. Analyzer Role is get/list only
 
 ---
 
-## Stage 11 — CI with clean Docker images (planned, not started)
+## Stage 11 — CI with clean Docker images
 
-GitHub Actions will run existing tests and `docker build` on GitHub-hosted runners with no proxy args. No ECR, no Helm, no POC deploy. There are no commands to run here yet.
+Workflow: `.github/workflows/ci.yml`. It runs on every push to `main` and on pull requests.
+
+GitHub-hosted runners:
+
+- pytest for payment-api, orders-api, incident-detector, ai-analyzer, remediation
+- frontend `npm test` and `npm run build`
+- `helm lint`, `helm template`, and the RBAC template tests
+- `docker build` of all six images with **no** proxy build args
+
+Images stay on the runner. There is no ECR push and no Helm deploy. The POC is not changed by this workflow.
+
+Watch a run: https://github.com/swarajte/nexops-ai-kubernetes-platform/actions
 
 ## Stage 12 — AWS + ECR + EKS + Helm (planned, not started)
 

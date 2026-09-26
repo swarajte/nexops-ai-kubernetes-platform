@@ -5,7 +5,7 @@
 ## Current status
 Stage 10 — Kubernetes least-privilege RBAC completed and verified on the POC.
 
-**Next (planned, not started):** Stage 11 CI (GitHub Actions tests + proxy-free image builds). Stage 12 AWS + ECR + EKS + Helm (IAC + CD).
+**Next:** Stage 11 CI is in `.github/workflows/ci.yml` (tests + proxy-free image builds; no registry push, no deploy). Stage 12 AWS + ECR + EKS + Helm is not started.
 
 **How everything works in simple words:** [docs/SIMPLE_GUIDE.md](docs/SIMPLE_GUIDE.md)  
 Start/stop commands: **[docs/COMMANDS.md](docs/COMMANDS.md)**  
@@ -172,5 +172,5 @@ cd frontend && npm test
 ## Notes
 - No secrets, proxy URLs, or corporate credentials belong in this repository.
 - POC environments may need an external proxy for Docker image builds; that is environment-specific only.
-- Stage 11 (not started): GitHub Actions tests + `docker build` without proxy args. Builds do not start long-running containers and do not update the POC.
+- Stage 11: GitHub Actions (`.github/workflows/ci.yml`) runs tests and `docker build` without proxy args. Builds do not start long-running containers, do not push images, and do not update the POC.
 - Stage 12 (not started): AWS infrastructure, push images to ECR, Helm deploy to EKS.
