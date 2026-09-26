@@ -41,7 +41,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
-          pytest
+          PYTHONPATH=. python -m pytest
 
   frontend:
     name: frontend test and build
