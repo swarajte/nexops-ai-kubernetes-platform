@@ -281,7 +281,14 @@ Code quality / security / container scans can be added later if useful.
 Do not push images and do not deploy in this stage.
 
 
-STAGE 12 — AWS + ECR + EKS + Helm (IAC + CD)
+STAGE 12 — AWS + ECR + EKS + Helm (IAC + CD)  [IN PROGRESS]
+
+Terraform is in infra/terraform. The first apply created six ECR repositories,
+and all six application images were pushed. enable_eks remains false. A running
+EKS cluster is about $3/day
+(control plane plus one t3.medium, no NAT gateway). Leave the cluster off until
+a demo, then terraform destroy when finished. Do not create ECR or EKS in the
+console; Terraform owns those resources.
 
 Take the clean Stage 11 images and run NexOps outside the corporate POC.
 

@@ -170,4 +170,4 @@ Every workload has its own ServiceAccount. Shop pods (`frontend`, `orders-api`, 
 
 **Stage 11 — CI with clean Docker images:** `.github/workflows/ci.yml` runs on every push to `main`. GitHub’s machines run tests and `docker build` with no proxy args. The images are thrown away when the job ends. Nothing is pushed to a registry and POC pods are not changed.
 
-**Stage 12 — AWS + ECR + EKS + Helm (not built):** take those images, push to ECR, create AWS infrastructure, and Helm-install NexOps on EKS (first run outside the corporate environment).
+**Stage 12 — AWS + ECR + EKS + Helm (in progress):** `infra/terraform` created six ECR repositories and all six images were pushed. The cluster is still off (`enable_eks=false`). Turning it on costs about $3/day (control plane plus one small node, no NAT gateway). Destroy it when the demo is over. Helm deployment is next.

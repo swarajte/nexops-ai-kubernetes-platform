@@ -3,10 +3,9 @@
 **NexOps — AI Kubernetes Incident Response & Self-Healing Platform**
 
 ## Current status
-Stage 11 — GitHub Actions CI with clean Docker image builds completed.
+Stage 12 — six ECR repositories and all six NexOps images are in AWS; EKS stays off until enabled.
 
-All 14 test/build jobs passed. CI does not push images or deploy.
-**Next:** Stage 12 — AWS + ECR + EKS + Helm (IAC + CD).
+Stage 11 CI is complete (14 green jobs). `enable_eks` defaults to false because a running cluster costs about $3/day.
 
 **How everything works in simple words:** [docs/SIMPLE_GUIDE.md](docs/SIMPLE_GUIDE.md)  
 Start/stop commands: **[docs/COMMANDS.md](docs/COMMANDS.md)**  
@@ -174,4 +173,4 @@ cd frontend && npm test
 - No secrets, proxy URLs, or corporate credentials belong in this repository.
 - POC environments may need an external proxy for Docker image builds; that is environment-specific only.
 - Stage 11: GitHub Actions (`.github/workflows/ci.yml`) runs tests and `docker build` without proxy args. Builds do not start long-running containers, do not push images, and do not update the POC.
-- Stage 12 (not started): AWS infrastructure, push images to ECR, Helm deploy to EKS.
+- Stage 12 (in progress): Terraform created six ECR repositories and the six application images were pushed. `enable_eks` remains false because a running cluster costs about $3/day. Helm deployment is next.

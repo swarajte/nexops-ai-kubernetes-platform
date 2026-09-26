@@ -1,0 +1,4 @@
+aws_region         = "eu-north-1"
+enable_eks          = false
+cluster_version     = "1.33"
+node_instance_type  = "t3.medium"

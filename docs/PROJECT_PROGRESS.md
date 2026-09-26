@@ -47,16 +47,17 @@ Failure → Monitoring → Incident Detector → AI Analyzer
 | 9 | Remediation | COMPLETED |
 | 10 | Kubernetes Security | COMPLETED |
 | 11 | CI (clean Docker images) | COMPLETED |
-| 12 | AWS + ECR + EKS + Helm (IAC + CD) | NOT STARTED |
+| 12 | AWS + ECR + EKS + Helm (IAC + CD) | IN PROGRESS |
 | 13 | Production Improvements | NOT STARTED |
 | 14 | Final Demo | NOT STARTED |
 | 15 | Reverse Engineering | NOT STARTED |
 
 ## Current stage
-**Stage 11 — CI with clean Docker images (COMPLETED)**
-GitHub Actions runs five Python test jobs, the frontend tests/build,
-Helm lint/render/RBAC checks, and six proxy-free Docker builds.
-All 14 jobs passed on 2026-09-26. Next: Stage 12 AWS + ECR + EKS + Helm.
+**Stage 12 — AWS + ECR + EKS + Helm (IN PROGRESS)**
+Terraform created six ECR repositories and all six NexOps images were pushed on
+2026-09-26. `enable_eks` remains false, so no VPC, EKS control plane, or worker
+exists. Turning it on costs about $3/day. Next: prepare Helm values, then enable
+EKS only for a planned deployment session.
 
 ## Important decisions
 - GitHub repository `nexops-ai-kubernetes-platform` is the permanent source of truth.
@@ -77,7 +78,7 @@ All 14 jobs passed on 2026-09-26. Next: Stage 12 AWS + ECR + EKS + Helm.
 - Stage 9 persists decisions and applies only four server-side allowlisted actions to `payment-api`; success requires rollout, app health, and detector resolution.
 - Stage 10 gives every workload its own ServiceAccount. Store pods do not mount an API token. Analyzer/detector Roles are get/list (watch on detector). Remediation Role is get/patch on `deployment/payment-api` only.
 - Stage 11 is **CI only**: GitHub Actions runs existing tests and `docker build` on GitHub-hosted runners with **no proxy args**, producing clean production images. No ECR push, no Helm deploy, no change to POC pods.
-- Stage 12 is **IAC + CD**: Terraform (or equivalent) for AWS (VPC, EKS, ECR), push those images to ECR, and Helm-deploy NexOps onto EKS so it runs outside the corporate POC. Old “standalone EKS stage” is part of Stage 12.
+- Stage 12 is **IAC + CD**: Terraform for ECR first, then a small public-subnet EKS cluster with no NAT gateway, then image push and Helm. `enable_eks=false` is the default so a normal apply does not start the ~$3/day cluster. Old “standalone EKS stage” is part of Stage 12.
 
 ## Known issues
 - Local Windows workstation does not have Git; push is from POC.

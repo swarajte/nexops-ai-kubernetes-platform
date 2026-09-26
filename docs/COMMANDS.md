@@ -736,9 +736,36 @@ Watch a run: https://github.com/swarajte/nexops-ai-kubernetes-platform/actions
 Acceptance verified on 2026-09-26: all 14 jobs passed (five Python test
 jobs, frontend, Helm/RBAC, and six Docker image builds).
 
-## Stage 12 — AWS + ECR + EKS + Helm (planned, not started)
+## Stage 12 — AWS + ECR + EKS + Helm (in progress)
 
-IAC + CD: AWS infrastructure, push Stage 11 images to ECR, Helm deploy onto EKS. There are no commands to run here yet.
+Terraform lives in `infra/terraform`. Region default is `eu-north-1` (Stockholm).
+
+**Do not click Create in the ECR or EKS console.** Terraform is the source of the resources, so they can be deleted cleanly.
+
+Cost guard:
+
+- `enable_eks = false` creates only six ECR repositories. Storage for these small images is cents.
+- `enable_eks = true` adds a VPC with public subnets only (no NAT gateway) and one `t3.medium` node.
+- A running cluster is about **$3/day** ($0.10/hour control plane plus the worker). Destroy it when you are not demoing.
+- $100 of credits lasts roughly a month if the cluster is left on all day.
+
+```bash
+cd infra/terraform
+cp terraform.tfvars.example terraform.tfvars
+terraform init
+terraform plan
+terraform apply
+```
+
+Leave `enable_eks = false` for the first apply. When you are ready to spend credits for a demo, set it to `true`, apply, use the cluster, then:
+
+```bash
+terraform destroy
+```
+
+The six repositories and image tags were created and pushed manually on
+2026-09-26. EKS remains disabled. Automated GitHub OIDC push and the Helm
+deployment are still pending.
 
 ---
 

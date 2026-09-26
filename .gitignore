@@ -48,5 +48,13 @@ docker-compose.override.yml
 **/build-*-with-proxy.sh
 /tmp/
 
-# Local SQLite test files
-*.db
+# Terraform — never commit state, downloaded providers, or real variable values
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+!*.tfvars.example
+crash.log
+override.tf
+override.tf.json
