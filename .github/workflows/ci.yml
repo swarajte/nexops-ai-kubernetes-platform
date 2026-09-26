@@ -106,11 +106,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build image without proxy args
-        env:
-          HTTP_PROXY: ""
-          HTTPS_PROXY: ""
-          http_proxy: ""
-          https_proxy: ""
-          NO_PROXY: ""
-          no_proxy: ""
         run: docker build --pull -t ${{ matrix.tag }} ./${{ matrix.context }}
