@@ -733,15 +733,18 @@ Images stay on the runner. There is no ECR push and no Helm deploy. The POC is n
 
 Watch a run: https://github.com/swarajte/nexops-ai-kubernetes-platform/actions
 
+Acceptance verified on 2026-09-26: all 14 jobs passed (five Python test
+jobs, frontend, Helm/RBAC, and six Docker image builds).
+
 ## Stage 12 — AWS + ECR + EKS + Helm (planned, not started)
 
 IAC + CD: AWS infrastructure, push Stage 11 images to ECR, Helm deploy onto EKS. There are no commands to run here yet.
 
 ---
 
-## What is running now (after Stage 10)
+## What is running now (after Stage 11)
 
 - Helm `nexops` chart `0.7.0`: frontend `v3`, incident-detector `v2`, ai-analyzer `v2`, remediation `v1`, tokenless store ServiceAccounts.
 - Helm `nexops-loki` in `nexops-monitoring`.
-- Grafana: **http://10.245.101.134:3300** (not NodePort 2400).
+- Grafana on the current POC: **http://10.245.101.140:3300**.
 Leave payment-api healthy unless you are demonstrating a failure.

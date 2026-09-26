@@ -3,9 +3,10 @@
 **NexOps — AI Kubernetes Incident Response & Self-Healing Platform**
 
 ## Current status
-Stage 10 — Kubernetes least-privilege RBAC completed and verified on the POC.
+Stage 11 — GitHub Actions CI with clean Docker image builds completed.
 
-**Next:** Stage 11 CI is in `.github/workflows/ci.yml` (tests + proxy-free image builds; no registry push, no deploy). Stage 12 AWS + ECR + EKS + Helm is not started.
+All 14 test/build jobs passed. CI does not push images or deploy.
+**Next:** Stage 12 — AWS + ECR + EKS + Helm (IAC + CD).
 
 **How everything works in simple words:** [docs/SIMPLE_GUIDE.md](docs/SIMPLE_GUIDE.md)  
 Start/stop commands: **[docs/COMMANDS.md](docs/COMMANDS.md)**  

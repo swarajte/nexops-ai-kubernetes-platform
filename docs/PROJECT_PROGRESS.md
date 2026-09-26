@@ -46,18 +46,17 @@ Failure → Monitoring → Incident Detector → AI Analyzer
 | 8 | NexOps Control Center | COMPLETED |
 | 9 | Remediation | COMPLETED |
 | 10 | Kubernetes Security | COMPLETED |
-| 11 | CI (clean Docker images) | IN PROGRESS |
+| 11 | CI (clean Docker images) | COMPLETED |
 | 12 | AWS + ECR + EKS + Helm (IAC + CD) | NOT STARTED |
 | 13 | Production Improvements | NOT STARTED |
 | 14 | Final Demo | NOT STARTED |
 | 15 | Reverse Engineering | NOT STARTED |
 
 ## Current stage
-**Stage 10 — Kubernetes security (COMPLETED)**
-Chart `0.7.0`: store pods use tokenless ServiceAccounts; detector is read-only;
-analyzer is read-only; remediation may get/patch only `deployment/payment-api`.
-Python workloads run as uid 10001 with dropped capabilities.
-Next: finish Stage 11 by confirming the GitHub Actions run is green, then Stage 12 AWS + ECR + EKS + Helm.
+**Stage 11 — CI with clean Docker images (COMPLETED)**
+GitHub Actions runs five Python test jobs, the frontend tests/build,
+Helm lint/render/RBAC checks, and six proxy-free Docker builds.
+All 14 jobs passed on 2026-09-26. Next: Stage 12 AWS + ECR + EKS + Helm.
 
 ## Important decisions
 - GitHub repository `nexops-ai-kubernetes-platform` is the permanent source of truth.
