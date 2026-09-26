@@ -54,10 +54,10 @@ Failure → Monitoring → Incident Detector → AI Analyzer
 
 ## Current stage
 **Stage 12 — AWS + ECR + EKS + Helm (IN PROGRESS)**
-Terraform created six ECR repositories and all six NexOps images were pushed on
-2026-09-26. `enable_eks` remains false, so no VPC, EKS control plane, or worker
-exists. Turning it on costs about $3/day. Next: prepare Helm values, then enable
-EKS only for a planned deployment session.
+Terraform state is in the encrypted S3 bucket `nexops-tfstate-541195182219`.
+ECR has six repositories and all six images. `helm/nexops/values-ecr.yaml` points
+at those images without changing the POC defaults. `enable_eks` remains false.
+Next: enable EKS only for a planned deployment session.
 
 ## Important decisions
 - GitHub repository `nexops-ai-kubernetes-platform` is the permanent source of truth.

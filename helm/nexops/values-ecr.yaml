@@ -1,0 +1,26 @@
+# Overlay for a future EKS install. The POC keeps using helm/nexops/values.yaml.
+# Usage: helm upgrade --install nexops helm/nexops -f helm/nexops/values.yaml -f helm/nexops/values-ecr.yaml
+frontend:
+  image:
+    repository: 541195182219.dkr.ecr.eu-north-1.amazonaws.com/nexops/frontend
+
+ordersApi:
+  image:
+    repository: 541195182219.dkr.ecr.eu-north-1.amazonaws.com/nexops/orders-api
+
+paymentApi:
+  image:
+    repository: 541195182219.dkr.ecr.eu-north-1.amazonaws.com/nexops/payment-api
+
+incidentDetector:
+  image:
+    repository: 541195182219.dkr.ecr.eu-north-1.amazonaws.com/nexops/incident-detector
+
+aiAnalyzer:
+  image:
+    repository: 541195182219.dkr.ecr.eu-north-1.amazonaws.com/nexops/ai-analyzer
+
+remediation:
+  image:
+    repository: 541195182219.dkr.ecr.eu-north-1.amazonaws.com/nexops/remediation
+  knownGoodImage: 541195182219.dkr.ecr.eu-north-1.amazonaws.com/nexops/payment-api:v3

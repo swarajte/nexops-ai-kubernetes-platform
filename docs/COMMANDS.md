@@ -764,8 +764,10 @@ terraform destroy
 ```
 
 The six repositories and image tags were created and pushed manually on
-2026-09-26. EKS remains disabled. Automated GitHub OIDC push and the Helm
-deployment are still pending.
+2026-09-26. State is now in S3 bucket `nexops-tfstate-541195182219`
+(key `nexops/terraform.tfstate`), encrypted and versioned. Use
+`helm/nexops/values-ecr.yaml` only for a future EKS install. Do not pass that
+file to the POC Helm release. EKS remains disabled.
 
 ---
 
